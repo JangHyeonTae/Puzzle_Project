@@ -7,7 +7,6 @@ public class Ball : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
 
     [SerializeField] private float jumpPower;
-    private bool isJump;
 
     private Rigidbody2D rb;
 
@@ -24,18 +23,10 @@ public class Ball : MonoBehaviour
         }
     }
 
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if(((1 << collision.gameObject.layer) & groundLayer) != 0)
-        {
-            isJump = false;
-        }
-    }
 
     private void Jump()
     {
         rb.velocity = new Vector2(rb.velocity.x, 0);
         rb.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
-        isJump = true;
     }
 }

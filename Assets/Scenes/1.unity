@@ -1027,7 +1027,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotSpeed: 0.1
-  returnSpeed: 1
+  returnSpeed: 5
 --- !u!1 &388319484
 GameObject:
   m_ObjectHideFlags: 0
@@ -1396,8 +1396,9 @@ GameObject:
   - component: {fileID: 573846213}
   - component: {fileID: 573846212}
   - component: {fileID: 573846211}
+  - component: {fileID: 573846215}
   m_Layer: 0
-  m_Name: Circle
+  m_Name: Ball
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1532,6 +1533,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &573846215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 573846210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 574befe760ede8a4089ffd8f73c1163c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  jumpPower: 4
 --- !u!1 &624023486
 GameObject:
   m_ObjectHideFlags: 0
@@ -1933,7 +1950,7 @@ GameObject:
   - component: {fileID: 821487530}
   - component: {fileID: 821487532}
   - component: {fileID: 821487531}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Side1 (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2386,7 +2403,7 @@ GameObject:
   - component: {fileID: 1160453880}
   - component: {fileID: 1160453882}
   - component: {fileID: 1160453881}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Side1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2615,7 +2632,7 @@ GameObject:
   - component: {fileID: 1255384028}
   - component: {fileID: 1255384030}
   - component: {fileID: 1255384029}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Side1 (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2745,7 +2762,7 @@ GameObject:
   - component: {fileID: 1349467879}
   - component: {fileID: 1349467881}
   - component: {fileID: 1349467880}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Side1 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3067,7 +3084,7 @@ GameObject:
   - component: {fileID: 1478256658}
   - component: {fileID: 1478256660}
   - component: {fileID: 1478256659}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Side1 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3935,6 +3952,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 519420032}
+  - {fileID: 573846214}
   - {fileID: 1613658045}
   - {fileID: 412330689}
   - {fileID: 1164636957}
@@ -3945,5 +3963,4 @@ SceneRoots:
   - {fileID: 1356967175}
   - {fileID: 530954682}
   - {fileID: 346644032}
-  - {fileID: 573846214}
   - {fileID: 1226242853}
