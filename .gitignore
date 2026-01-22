@@ -75,3 +75,6 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 /Assets/2D Cards Game Art Pack
 /Assets/Polymorphic Grid
+/Assets/Tomino
+/Assets/Chess Studio
+/Assets/Plugins
