@@ -12,25 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8112fbe73cc36a64f8362533d59d8d39, type: 3}
   m_Name: Teteris6
   m_EditorClassIdentifier: 
-  <tetrisSprite>k__BackingField: {fileID: 0}
+  <tetrisSprite>k__BackingField: {fileID: 21300000, guid: f1dda8883b843af4a969a8a2d48a7c55,
+    type: 3}
   <posVectors>k__BackingField:
   - blockPos:
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
+    - {x: 0.5, y: 0.5}
+    - {x: -0.5, y: 0.5}
+    - {x: 0.5, y: -0.5}
+    - {x: -0.5, y: -0.5}
   - blockPos:
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
+    - {x: 0.5, y: 0.5}
+    - {x: -0.5, y: 0.5}
+    - {x: 0.5, y: -0.5}
+    - {x: -0.5, y: -0.5}
   - blockPos:
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
+    - {x: 0.5, y: 0.5}
+    - {x: -0.5, y: 0.5}
+    - {x: 0.5, y: -0.5}
+    - {x: -0.5, y: -0.5}
   - blockPos:
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
-    - {x: 0, y: 0}
+    - {x: 0.5, y: 0.5}
+    - {x: -0.5, y: 0.5}
+    - {x: 0.5, y: -0.5}
+    - {x: -0.5, y: -0.5}
