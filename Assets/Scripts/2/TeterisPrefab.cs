@@ -5,20 +5,26 @@ using UnityEngine;
 
 public class TeterisPrefab : MonoBehaviour
 {
+    [SerializeField] private TeterisBlock blockSO;
     private Transform[] childrenPos;
+    private Sprite tetrisSprite;
+    private int curRotIndex;
 
     private CancellationTokenSource token;
 
     //확인용
-    public Vector3[] childrenVec;
+    public Vector2[] childrenVec;
 
     public event Action OnChangeRot;
+
+
     public void Start()
     {
         int childCount = transform.childCount;
+        curRotIndex = 0;
 
         childrenPos = new Transform[childCount];
-        childrenVec = new Vector3[childCount]; 
+        childrenVec = new Vector2[childCount];
 
         for (int i = 0; i < childCount; i++)
         {
@@ -28,6 +34,22 @@ public class TeterisPrefab : MonoBehaviour
         }
 
         OnChangeRot += ChangeRot;
+        childrenVec = blockSO.posVectors[curRotIndex].blockPos;
+        
+
+        for (int i = 0; i < childCount; i++)
+        {
+            var childPrefab = transform.GetChild(i);
+            childPrefab.GetComponent<SpriteRenderer>().sprite = blockSO.tetrisSprite;
+            childPrefab.localPosition = blockSO.posVectors[curRotIndex].blockPos[i];
+        }
+
+
+    }
+
+    private void OnDisable()
+    {
+        OnChangeRot -= ChangeRot;
     }
 
     private void Update()
@@ -65,13 +87,36 @@ public class TeterisPrefab : MonoBehaviour
 
     private void ChangeRot()
     {
-        for(int i =0; i < transform.childCount; i++)
+        //if (!BlockCheck())
+        //    return;
+
+        curRotIndex++;
+
+        if (curRotIndex >= 4)
+            curRotIndex = 0;
+
+        for (int i = 0; i < transform.childCount; i++)
         {
-            //테트리스 회전에 대해 공부
-            var pos = transform.GetChild(i).position;
-            pos = new Vector3(pos.x - 0.5f, pos.y - 0.5f, pos.z);
+            var childPrefab = transform.GetChild(i);
+            childPrefab.localPosition = blockSO.posVectors[curRotIndex].blockPos[i];
         }
     }
+
+    //private bool BlockCheck()
+    //{
+
+    //    for (int i = 0; i < transform.childCount; i++)
+    //    {
+    //        Vector2 checkBlockVec = (Vector2)transform.position + blockSO.posVectors[curRotIndex].blockPos[i];
+    //        if (전체 타일중 현재 벡터가 포함되어 있다면)
+    //        {
+    //         return false;
+    //        }
+
+    //    }
+    //    return true;
+    //}
+
 
     private void CancelTimer()
     {
