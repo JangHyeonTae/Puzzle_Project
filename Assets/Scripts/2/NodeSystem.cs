@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class NodeSystem : MonoBehaviour
+public class NodeSystem : Singleton<NodeSystem>
 {
     [SerializeField] private Tilemap tilemap;
 
     private List<Node> nodeList;
+    private List<Vector3> vecList;
 
-    private void Awake()
+    protected void Awake()
     {
+        base.Awake();
         nodeList = new List<Node>();
-
-        
+        vecList = new List<Vector3>();
     }
 
-    private void ResetNode()
+    private void ResetVec()
     {
+        vecList.Clear();
 
     }
 
