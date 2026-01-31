@@ -9,9 +9,26 @@ public class TileSystem : MonoBehaviour
     [SerializeField] private TileBase tile; 
     [SerializeField] private TeterisBlock tileData;
 
+    private DrawGrid drawGrid;
     void Start()
     {
         GenerateTilemap();
+        drawGrid = DrawGrid.Instance;
+    }
+
+    private void OnEnable()
+    {
+        drawGrid.OnDrawCell += CheckFinish;
+    }
+
+    private void AddCell()
+    {
+
+    }
+
+    private void CheckFinish()
+    {
+        
     }
 
     public void GenerateTilemap()

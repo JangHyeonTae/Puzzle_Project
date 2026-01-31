@@ -1,21 +1,26 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 
 [RequireComponent(typeof(LineRenderer))]
-public class DrawGrid : MonoBehaviour
+public class DrawGrid : Singleton<DrawGrid>
 {
     public Grid grid;
     public Transform targetObject;
     public Color gridColor = Color.cyan;
     public float lineWidth = 0.05f;
+    public List<Vector3Int> cellList;
+
+    public Action OnDrawCell;
 
     void Start()
     {
         if (grid == null)
             grid = FindObjectOfType<Grid>();
 
+        cellList = new List<Vector3Int>();
         DrawGridFromChildren();
     }
 
@@ -46,6 +51,7 @@ public class DrawGrid : MonoBehaviour
                 Transform block = child.GetChild(i);
                 Vector3Int cellPos = grid.WorldToCell(block.position);
                 cellPositions.Add(cellPos);
+                cellList.Add(cellPos);
             }
         }
 
@@ -60,6 +66,7 @@ public class DrawGrid : MonoBehaviour
         {
             DrawCellSquare(cellPos, cellSizeX, cellSizeY);
         }
+
     }
 
     void DrawCellSquare(Vector3Int cellPos, float cellSizeX, float cellSizeY)

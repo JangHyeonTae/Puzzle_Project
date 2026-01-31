@@ -92,7 +92,10 @@ public class TeterisPrefab : MonoBehaviour,
         {
             await UniTask.Delay(TimeSpan.FromSeconds(1f), cancellationToken: token.Token);
             if (isPointerDown && !isDragging)
+            {
                 OnChangeRot?.Invoke();
+                DrawGrid.Instance.OnDrawCell?.Invoke();
+            }
         }
         catch (OperationCanceledException) { }
     }
@@ -140,6 +143,7 @@ public class TeterisPrefab : MonoBehaviour,
             transform.position = snappedPos;
             lastSnappedPosition = snappedPos;
             UpdateChildrenVecWorld();
+
         }
 
         // 디버그 필요하면 켜
@@ -152,6 +156,8 @@ public class TeterisPrefab : MonoBehaviour,
         CancelTimer();
         isPointerDown = false;
         hasDragOffset = false;
+
+        DrawGrid.Instance.OnDrawCell?.Invoke();
     }
 
     public void ForceSnapByScreenPos(Vector2 screenPos)

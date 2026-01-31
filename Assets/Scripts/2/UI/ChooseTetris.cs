@@ -69,7 +69,7 @@ public class ChooseTetris : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
                 currentDragObject.gameObject, eventData, ExecuteEvents.endDragHandler
                 );
         }
-        
+        DrawGrid.Instance.OnDrawCell?.Invoke();
         isDragging = false;
         currentDragObject = null;
     }
