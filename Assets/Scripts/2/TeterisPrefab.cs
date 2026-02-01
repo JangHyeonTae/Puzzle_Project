@@ -1,7 +1,9 @@
 using Cysharp.Threading.Tasks;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
-using Unity.VisualScripting;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -10,7 +12,7 @@ public class TeterisPrefab : MonoBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private TeterisBlock blockSO;
-    private Transform[] childrenPos;
+    public Vector3[] childrenPositions;
     private int curRotIndex;
 
     private CancellationTokenSource token;
@@ -41,11 +43,17 @@ public class TeterisPrefab : MonoBehaviour,
         grid = _grid;
 
         int childCount = transform.childCount;
-        childrenPos = new Transform[childCount];
+        childrenPositions = new Vector3[childCount];
         childrenVec = new Vector2[childCount];
 
+        // ★ 초기화 시점에도 셀 좌표로 저장
         for (int i = 0; i < childCount; i++)
-            childrenPos[i] = transform.GetChild(i);
+        {
+            Vector3 childWorldPos = transform.GetChild(i).position;
+            childWorldPos.z = 0;
+            Vector3Int cellPos = grid.WorldToCell(childWorldPos);
+            childrenPositions[i] = cellPos;
+        }
 
         EnsureChildColliderAndForwarder();
 
@@ -94,7 +102,7 @@ public class TeterisPrefab : MonoBehaviour,
             if (isPointerDown && !isDragging)
             {
                 OnChangeRot?.Invoke();
-                DrawGrid.Instance.OnDrawCell?.Invoke();
+                ChangeVec();
             }
         }
         catch (OperationCanceledException) { }
@@ -120,7 +128,7 @@ public class TeterisPrefab : MonoBehaviour,
 
         // 현재 위치를 기준으로 시작
         lastSnappedPosition = transform.position;
-        
+
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -156,8 +164,7 @@ public class TeterisPrefab : MonoBehaviour,
         CancelTimer();
         isPointerDown = false;
         hasDragOffset = false;
-
-        DrawGrid.Instance.OnDrawCell?.Invoke();
+        ChangeVec();
     }
 
     public void ForceSnapByScreenPos(Vector2 screenPos)
@@ -181,6 +188,7 @@ public class TeterisPrefab : MonoBehaviour,
     {
         curRotIndex = (curRotIndex + 1) % 4;
         ApplyRotation(curRotIndex);
+
         UpdateChildrenVecWorld();
     }
 
@@ -202,12 +210,14 @@ public class TeterisPrefab : MonoBehaviour,
             childrenVec = new Vector2[rot.Length];
 
         Array.Copy(rot, childrenVec, rot.Length);
+        ChangeVec();
     }
 
     private void UpdateChildrenVecWorld()
     {
-        for (int i = 0; i < childrenPos.Length; i++)
-            childrenVec[i] = childrenPos[i].position;
+        for (int i = 0; i < childrenPositions.Length; i++)
+            childrenVec[i] = childrenPositions[i];
+
     }
 
     private void EnsureChildColliderAndForwarder()
@@ -223,6 +233,24 @@ public class TeterisPrefab : MonoBehaviour,
             if (child.GetComponent<TetrisChild>() == null)
                 child.gameObject.AddComponent<TetrisChild>();
         }
+    }
+
+    /// <summary>
+    /// ★ 핵심 수정: 모든 자식의 위치를 셀 좌표로 변환하여 저장
+    /// </summary>
+    public void ChangeVec()
+    {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Vector3 childWorldPos = transform.GetChild(i).position;
+            childWorldPos.z = 0;
+
+            // 월드 좌표를 셀 좌표로 변환하여 저장
+            Vector3Int cellPos = grid.WorldToCell(childWorldPos);
+            childrenPositions[i] = cellPos;
+        }
+
+        DrawGrid.Instance.OnCheckCell?.Invoke(childrenPositions.ToList(), true);
     }
 
     private void CancelTimer()

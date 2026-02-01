@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -69,7 +71,7 @@ public class ChooseTetris : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
                 currentDragObject.gameObject, eventData, ExecuteEvents.endDragHandler
                 );
         }
-        DrawGrid.Instance.OnDrawCell?.Invoke();
+
         isDragging = false;
         currentDragObject = null;
     }

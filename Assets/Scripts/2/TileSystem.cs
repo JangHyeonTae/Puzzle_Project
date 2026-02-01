@@ -18,7 +18,7 @@ public class TileSystem : MonoBehaviour
 
     private void OnEnable()
     {
-        drawGrid.OnDrawCell += CheckFinish;
+        //drawGrid.OnCheckCell += CheckFinish;
     }
 
     private void AddCell()

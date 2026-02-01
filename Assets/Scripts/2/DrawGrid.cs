@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 
@@ -11,17 +12,34 @@ public class DrawGrid : Singleton<DrawGrid>
     public Transform targetObject;
     public Color gridColor = Color.cyan;
     public float lineWidth = 0.05f;
-    public List<Vector3Int> cellList;
+    public List<Vector3> cellList; // 이미 그려진 셀들
+    public List<Vector3> curExitList; // 현재 사용 가능한 셀들
 
-    public Action OnDrawCell;
+    private int exitCount;
+    public int ExitCount { get { return exitCount; } set { exitCount = value;  OnChangeCount?.Invoke(exitCount); } }
+    public event Action<int> OnChangeCount;
+
+    public Action<List<Vector3>, bool> OnCheckCell;
+    public event Action<List<Vector3>> OnDrawAddVec;
 
     void Start()
     {
         if (grid == null)
             grid = FindObjectOfType<Grid>();
 
-        cellList = new List<Vector3Int>();
+        cellList = new List<Vector3>();
+
+        OnDrawAddVec += AddVector;
+        OnCheckCell += ChangeVector;
+        OnChangeCount += FinishCheck;
         DrawGridFromChildren();
+    }
+
+    private void OnDestroy()
+    {
+        OnDrawAddVec -= AddVector;
+        OnCheckCell -= ChangeVector;
+        OnChangeCount -= FinishCheck;
     }
 
     void DrawGridFromChildren()
@@ -51,7 +69,9 @@ public class DrawGrid : Singleton<DrawGrid>
                 Transform block = child.GetChild(i);
                 Vector3Int cellPos = grid.WorldToCell(block.position);
                 cellPositions.Add(cellPos);
-                cellList.Add(cellPos);
+
+                // Vector3Int를 Vector3로 변환하여 저장
+                cellList.Add(new Vector3(cellPos.x, cellPos.y, cellPos.z));
             }
         }
 
@@ -67,6 +87,7 @@ public class DrawGrid : Singleton<DrawGrid>
             DrawCellSquare(cellPos, cellSizeX, cellSizeY);
         }
 
+        OnDrawAddVec.Invoke(cellList);
     }
 
     void DrawCellSquare(Vector3Int cellPos, float cellSizeX, float cellSizeY)
@@ -109,5 +130,94 @@ public class DrawGrid : Singleton<DrawGrid>
         lr.SetPosition(0, start);
         lr.SetPosition(1, end);
     }
-}
 
+    private void AddVector(List<Vector3> cellPositions)
+    {
+        curExitList = new List<Vector3>(cellPositions);
+        ExitCount = curExitList.Count;
+    }
+
+    /// <summary>
+    /// 핵심 수정: cellList는 절대 수정하지 않고, curExitList만 변경
+    /// isRemove = true: 블럭이 그리드에 놓임 → curExitList에서 제거
+    /// isRemove = false: 블럭이 그리드에서 들어올림 → curExitList에 추가
+    /// </summary>
+    private void ChangeVector(List<Vector3> checkCells, bool isRemove)
+    {
+        if (isRemove)
+        {
+            Debug.Log($"=== 블럭 배치 (curExitList에서 제거) ===");
+            for (int i = 0; i < checkCells.Count; i++)
+            {
+                Vector3 checkCell = checkCells[i];
+
+                // 1. cellList에 해당 셀이 존재하는지 확인
+                bool matchedInCellList = cellList.Contains(checkCell);
+
+                if (!matchedInCellList)
+                {
+                    Debug.Log($"<color=red> 그리드 범위 밖: {checkCell}</color>");
+                    continue;
+                }
+
+                // 2. curExitList에 해당 셀이 존재하는지 확인
+                bool matchedInExitList = curExitList.Contains(checkCell);
+
+                if (matchedInExitList)
+                {
+                    curExitList.Remove(checkCell);
+                    ExitCount--;
+                    Debug.Log($"<color=green> 배치 성공: {checkCell} → curExitList에서 제거</color>");
+                }
+                else
+                {
+                    Debug.Log($"<color=yellow> 이미 차있는 칸: {checkCell}</color>");
+                }
+            }
+        }
+        else
+        {
+            Debug.Log($"=== 블럭 들어올림 (curExitList에 추가) ===");
+            for (int i = 0; i < checkCells.Count; i++)
+            {
+                Vector3 checkCell = checkCells[i];
+
+                // 1. cellList에 해당 셀이 존재하는지 확인
+                Vector3? matchedInCellList = cellList.FirstOrDefault(cell =>
+                    Mathf.Approximately(cell.x, checkCell.x) &&
+                    Mathf.Approximately(cell.y, checkCell.y));
+
+                if (!matchedInCellList.HasValue)
+                {
+                    Debug.Log($"<color=red> 그리드 범위 밖: {checkCell}</color>");
+                    continue;
+                }
+
+                // 2. curExitList에 이미 존재하는지 확인
+                Vector3? matchedInExitList = curExitList.FirstOrDefault(cell =>
+                    Mathf.Approximately(cell.x, checkCell.x) &&
+                    Mathf.Approximately(cell.y, checkCell.y));
+
+                if (!matchedInExitList.HasValue)
+                {
+                    curExitList.Add(matchedInCellList.Value);
+                    ExitCount++;
+                    Debug.Log($"<color=cyan> 들어올림 성공: {checkCell} → curExitList에 추가</color>");
+                }
+                else
+                {
+                    Debug.Log($"<color=yellow> 이미 비어있는 칸: {checkCell}</color>");
+                }
+            }
+        }
+
+        Debug.Log($"현재 비어있는 칸 개수: {curExitList.Count}/{cellList.Count}");
+    }
+
+    private void FinishCheck(int value)
+    {
+        if (value == 0)
+            Debug.Log("스테이지 끝");
+    }
+
+}
