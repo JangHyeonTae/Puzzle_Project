@@ -7,7 +7,7 @@ using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class TeterisPrefab : MonoBehaviour,
+public class TeterisPrefab : PooledObject,
     IPointerDownHandler, IPointerUpHandler,
     IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -28,6 +28,11 @@ public class TeterisPrefab : MonoBehaviour,
     private Vector3Int dragCellOffset;
     private bool hasDragOffset;
 
+    // 터치 횟수 추적
+    private int touchCount;
+    private float lastTouchTime;
+    private float doubleTouchThreshold = 0.3f;
+
     // 확인용
     public Vector2[] childrenVec;
     public event Action OnChangeRot;
@@ -39,6 +44,9 @@ public class TeterisPrefab : MonoBehaviour,
 
     public void Init(TeterisBlock tetrisSO, Grid _grid)
     {
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+
         blockSO = tetrisSO;
         grid = _grid;
 
@@ -65,7 +73,8 @@ public class TeterisPrefab : MonoBehaviour,
 
         OnChangeRot -= ChangeRot;
         OnChangeRot += ChangeRot;
-
+        
+        touchCount = 0;
         hasDragOffset = false;
     }
 
@@ -76,12 +85,15 @@ public class TeterisPrefab : MonoBehaviour,
         isPointerDown = false;
         isDragging = false;
         hasDragOffset = false;
+        touchCount = 0;
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         isPointerDown = true;
         isDragging = false;
+        CheckTouchCount();
+
         StartLongPressTimer().Forget();
     }
 
@@ -90,7 +102,27 @@ public class TeterisPrefab : MonoBehaviour,
         isPointerDown = false;
         CancelTimer();
     }
+    private void CheckTouchCount()
+    {
+        float currentTime = Time.time;
 
+        // 이전 터치로부터 일정 시간이 지났으면 카운트 리셋
+        if (currentTime - lastTouchTime > doubleTouchThreshold)
+        {
+            touchCount = 0;
+        }
+
+        touchCount++;
+        lastTouchTime = currentTime;
+
+        Debug.Log($"터치 횟수: {touchCount}");
+
+        // 2번 이상 터치 시 할당 해제
+        if (touchCount >= 2)
+        {
+            Outit();
+        }
+    }
     private async UniTaskVoid StartLongPressTimer()
     {
         CancelTimer();
@@ -263,8 +295,23 @@ public class TeterisPrefab : MonoBehaviour,
         }
     }
 
-    private void OnDestroy()
+    private void ResetSetting()
     {
+        touchCount = 0;
+        childrenPositions = null;
+        curRotIndex = 0;
+        isPointerDown = false;
+        isDragging = false;
+        lastSnappedPosition = Vector3.zero;
+        dragCellOffset = Vector3Int.zero;
+        hasDragOffset = false;
+        blockSO = null;
+        OnChangeRot -= ChangeRot;
+    }
+    public void Outit()
+    {
+        ResetSetting();
         CancelTimer();
+        Release();
     }
 }

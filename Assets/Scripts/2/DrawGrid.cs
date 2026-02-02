@@ -9,7 +9,6 @@ using UnityEngine;
 public class DrawGrid : Singleton<DrawGrid>
 {
     public Grid grid;
-    public Transform targetObject;
     public Color gridColor = Color.cyan;
     public float lineWidth = 0.05f;
     public List<Vector3> cellList; // 이미 그려진 셀들
@@ -24,6 +23,7 @@ public class DrawGrid : Singleton<DrawGrid>
 
     void Start()
     {
+        //curStage Json에서 받아오기
         if (grid == null)
             grid = FindObjectOfType<Grid>();
 
@@ -42,18 +42,26 @@ public class DrawGrid : Singleton<DrawGrid>
         OnChangeCount -= FinishCheck;
     }
 
-    void DrawGridFromChildren()
+    async void DrawGridFromChildren()
     {
-        if (targetObject == null)
+        DrawMapClear();
+        GameObject stagePrefab = await DataManager.Instance.LoadStagePrefab(StageManager.Instance.curStage);
+        
+        if (stagePrefab == null)
         {
-            Debug.LogWarning("Target Object가 할당되지 않았습니다!");
+            Debug.LogWarning("스테이지 프리팹을 로드할 수 없습니다!");
             return;
         }
 
         if (grid == null)
         {
-            Debug.LogWarning("Grid를 찾을 수 없습니다!");
-            return;
+            grid = FindObjectOfType<Grid>();
+            if (grid == null)
+            {
+                Debug.LogWarning("Grid를 찾을 수 없습니다!");
+                DataManager.Instance.ReleaseStagePrefab(stagePrefab);
+                return;
+            }
         }
 
         float cellSizeX = grid.cellSize.x;
@@ -62,15 +70,13 @@ public class DrawGrid : Singleton<DrawGrid>
         // 모든 자식 블록의 셀 좌표 수집
         HashSet<Vector3Int> cellPositions = new HashSet<Vector3Int>();
 
-        foreach (Transform child in targetObject)
+        foreach (Transform child in stagePrefab.transform)
         {
             for (int i = 0; i < child.childCount; i++)
             {
                 Transform block = child.GetChild(i);
                 Vector3Int cellPos = grid.WorldToCell(block.position);
                 cellPositions.Add(cellPos);
-
-                // Vector3Int를 Vector3로 변환하여 저장
                 cellList.Add(new Vector3(cellPos.x, cellPos.y, cellPos.z));
             }
         }
@@ -217,7 +223,28 @@ public class DrawGrid : Singleton<DrawGrid>
     private void FinishCheck(int value)
     {
         if (value == 0)
+        {
+            StageManager.Instance.UpStage();
             Debug.Log("스테이지 끝");
+            DrawGridFromChildren();
+        }
     }
 
+    private void DrawMapClear()
+    {
+        if (cellList != null)
+            cellList.Clear();
+
+        if (curExitList != null)
+            curExitList.Clear();
+
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = transform.GetChild(i);
+            if (child != null)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+    }
 }

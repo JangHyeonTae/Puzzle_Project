@@ -1,14 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class ChooseTetris : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [SerializeField] private TeterisBlock tetrisSO;
-    [SerializeField] private TeterisPrefab tetrisSample;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Grid grid; // Grid 참조
 
@@ -42,7 +39,8 @@ public class ChooseTetris : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             lastSnappedPosition = snappedPos;
 
             // 오브젝트 생성
-            currentDragObject = Instantiate(tetrisSample, snappedPos, Quaternion.identity);
+            currentDragObject = StageManager.Instance.tetrisPool.GetPooled() as TeterisPrefab;
+            currentDragObject.transform.position = snappedPos;
             currentDragObject.Init(tetrisSO, grid);
 
             // 드래그 이벤트 넘기기
