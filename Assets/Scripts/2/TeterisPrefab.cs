@@ -134,7 +134,6 @@ public class TeterisPrefab : PooledObject,
             if (isPointerDown && !isDragging)
             {
                 OnChangeRot?.Invoke();
-                ChangeVec();
             }
         }
         catch (OperationCanceledException) { }
