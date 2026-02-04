@@ -1,7 +1,8 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting.ReorderableList;
 using UnityEngine;
 
 
@@ -11,19 +12,23 @@ public class DrawGrid : Singleton<DrawGrid>
     public Grid grid;
     public Color gridColor = Color.cyan;
     public float lineWidth = 0.05f;
-    public List<Vector3> cellList; // ÀÌ¹Ì ±×·ÁÁø ¼¿µé
-    public List<Vector3> curExitList; // ÇöÀç »ç¿ë °¡´ÉÇÑ ¼¿µé
+    public List<Vector3> cellList; // ì´ë¯¸ ê·¸ë ¤ì§„ ì…€ë“¤
+    public List<Vector3> cellExitList; // í˜„ì¬ ì‚¬ìš© ê°€ëŠ¥í•œ ì…€ë“¤
+
+    //í•˜ì´ë¼ì´íŠ¸
+    private Dictionary<Vector3, List<LineRenderer>> cellLines = new Dictionary<Vector3, List<LineRenderer>>();
+    public Color highlightColor = Color.yellow;
 
     private int exitCount;
     public int ExitCount { get { return exitCount; } set { exitCount = value;  OnChangeCount?.Invoke(exitCount); } }
     public event Action<int> OnChangeCount;
 
-    public Action<List<Vector3>, bool> OnCheckCell;
+    public Action<List<Vector3>, List<Vector3>> OnCheckCell;
     public event Action<List<Vector3>> OnDrawAddVec;
 
     void Start()
     {
-        //curStage Json¿¡¼­ ¹Ş¾Æ¿À±â
+        //curStage Jsonì—ì„œ ë°›ì•„ì˜¤ê¸°
         if (grid == null)
             grid = FindObjectOfType<Grid>();
 
@@ -49,7 +54,7 @@ public class DrawGrid : Singleton<DrawGrid>
         
         if (stagePrefab == null)
         {
-            Debug.LogWarning("½ºÅ×ÀÌÁö ÇÁ¸®ÆÕÀ» ·ÎµåÇÒ ¼ö ¾ø½À´Ï´Ù!");
+            Debug.LogWarning("ìŠ¤í…Œì´ì§€ í”„ë¦¬íŒ¹ì„ ë¡œë“œí•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
             return;
         }
 
@@ -58,7 +63,7 @@ public class DrawGrid : Singleton<DrawGrid>
             grid = FindObjectOfType<Grid>();
             if (grid == null)
             {
-                Debug.LogWarning("Grid¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+                Debug.LogWarning("Gridë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
                 DataManager.Instance.ReleaseStagePrefab(stagePrefab);
                 return;
             }
@@ -67,7 +72,7 @@ public class DrawGrid : Singleton<DrawGrid>
         float cellSizeX = grid.cellSize.x;
         float cellSizeY = grid.cellSize.y;
 
-        // ¸ğµç ÀÚ½Ä ºí·ÏÀÇ ¼¿ ÁÂÇ¥ ¼öÁı
+        // ëª¨ë“  ìì‹ ë¸”ë¡ì˜ ì…€ ì¢Œí‘œ ìˆ˜ì§‘
         HashSet<Vector3Int> cellPositions = new HashSet<Vector3Int>();
 
         foreach (Transform child in stagePrefab.transform)
@@ -83,11 +88,11 @@ public class DrawGrid : Singleton<DrawGrid>
 
         if (cellPositions.Count == 0)
         {
-            Debug.LogWarning("±×¸± ºí·ÏÀÌ ¾ø½À´Ï´Ù!");
+            Debug.LogWarning("ê·¸ë¦´ ë¸”ë¡ì´ ì—†ìŠµë‹ˆë‹¤!");
             return;
         }
 
-        // °¢ ¼¿¸¶´Ù »ç°¢Çü ±×¸®±â
+        // ê° ì…€ë§ˆë‹¤ ì‚¬ê°í˜• ê·¸ë¦¬ê¸°
         foreach (Vector3Int cellPos in cellPositions)
         {
             DrawCellSquare(cellPos, cellSizeX, cellSizeY);
@@ -95,29 +100,28 @@ public class DrawGrid : Singleton<DrawGrid>
 
         OnDrawAddVec.Invoke(cellList);
     }
-
+    
     void DrawCellSquare(Vector3Int cellPos, float cellSizeX, float cellSizeY)
     {
-        // ¼¿ÀÇ ¿ŞÂÊ ÇÏ´Ü ¸ğ¼­¸®
-        Vector3 bottomLeft = grid.CellToWorld(cellPos);// + new Vector3(-0.25f, -0.25f, 0);
-
-        // 4°³ÀÇ ¸ğ¼­¸® ÁÂÇ¥
+        Vector3 bottomLeft = grid.CellToWorld(cellPos);
         Vector3 bottomRight = bottomLeft + new Vector3(cellSizeX, 0, 0);
         Vector3 topLeft = bottomLeft + new Vector3(0, cellSizeY, 0);
         Vector3 topRight = bottomLeft + new Vector3(cellSizeX, cellSizeY, 0);
 
-        // 4°³ÀÇ ¼± ±×¸®±â
-        CreateLine(bottomLeft, bottomRight);  // ÇÏ´Ü
-        CreateLine(bottomRight, topRight);    // ¿À¸¥ÂÊ
-        CreateLine(topRight, topLeft);        // »ó´Ü
-        CreateLine(topLeft, bottomLeft);      // ¿ŞÂÊ
+        // ìƒì„±ëœ ë¼ì¸ë“¤ì„ ë¦¬ìŠ¤íŠ¸ì— ë‹´ì•„ ë”•ì…”ë„ˆë¦¬ì— ì €ì¥
+        List<LineRenderer> lines = new List<LineRenderer>();
+        lines.Add(CreateLine(bottomLeft, bottomRight));
+        lines.Add(CreateLine(bottomRight, topRight));
+        lines.Add(CreateLine(topRight, topLeft));
+        lines.Add(CreateLine(topLeft, bottomLeft));
+
+        cellLines[cellPos] = lines;
     }
 
-    void CreateLine(Vector3 start, Vector3 end)
+    LineRenderer CreateLine(Vector3 start, Vector3 end)
     {
         GameObject lineObj = new GameObject("GridLine");
         lineObj.transform.SetParent(transform);
-        lineObj.transform.localPosition = Vector3.zero;
 
         LineRenderer lr = lineObj.AddComponent<LineRenderer>();
         lr.material = new Material(Shader.Find("Sprites/Default"));
@@ -129,103 +133,64 @@ public class DrawGrid : Singleton<DrawGrid>
         lr.useWorldSpace = true;
         lr.sortingOrder = 100;
 
-        // Z ÁÂÇ¥¸¦ 0À¸·Î ¼³Á¤
         start.z = 0;
         end.z = 0;
-
         lr.SetPosition(0, start);
         lr.SetPosition(1, end);
-    }
 
+        return lr;
+    }
     private void AddVector(List<Vector3> cellPositions)
     {
-        curExitList = new List<Vector3>(cellPositions);
-        ExitCount = curExitList.Count;
+        cellExitList = new List<Vector3>(cellPositions);
+        ExitCount = cellExitList.Count;
     }
-
-    /// <summary>
-    /// ÇÙ½É ¼öÁ¤: cellList´Â Àı´ë ¼öÁ¤ÇÏÁö ¾Ê°í, curExitList¸¸ º¯°æ
-    /// isRemove = true: ºí·°ÀÌ ±×¸®µå¿¡ ³õÀÓ ¡æ curExitList¿¡¼­ Á¦°Å
-    /// isRemove = false: ºí·°ÀÌ ±×¸®µå¿¡¼­ µé¾î¿Ã¸² ¡æ curExitList¿¡ Ãß°¡
-    /// </summary>
-    private void ChangeVector(List<Vector3> checkCells, bool isRemove)
+    private void UpdateCellVisual(Vector3 cellPos, bool isOccupied)
     {
-        if (isRemove)
+        if (cellLines.TryGetValue(cellPos, out List<LineRenderer> lines))
         {
-            Debug.Log($"=== ºí·° ¹èÄ¡ (curExitList¿¡¼­ Á¦°Å) ===");
-            for (int i = 0; i < checkCells.Count; i++)
+            Color targetColor = isOccupied ? highlightColor : gridColor;
+            foreach (var lr in lines)
             {
-                Vector3 checkCell = checkCells[i];
-
-                // 1. cellList¿¡ ÇØ´ç ¼¿ÀÌ Á¸ÀçÇÏ´ÂÁö È®ÀÎ
-                bool matchedInCellList = cellList.Contains(checkCell);
-
-                if (!matchedInCellList)
-                {
-                    Debug.Log($"<color=red> ±×¸®µå ¹üÀ§ ¹Û: {checkCell}</color>");
-                    continue;
-                }
-
-                // 2. curExitList¿¡ ÇØ´ç ¼¿ÀÌ Á¸ÀçÇÏ´ÂÁö È®ÀÎ
-                bool matchedInExitList = curExitList.Contains(checkCell);
-
-                if (matchedInExitList)
-                {
-                    curExitList.Remove(checkCell);
-                    ExitCount--;
-                    Debug.Log($"<color=green> ¹èÄ¡ ¼º°ø: {checkCell} ¡æ curExitList¿¡¼­ Á¦°Å</color>");
-                }
-                else
-                {
-                    Debug.Log($"<color=yellow> ÀÌ¹Ì Â÷ÀÖ´Â Ä­: {checkCell}</color>");
-                }
+                lr.startColor = targetColor;
+                lr.endColor = targetColor;
             }
         }
-        else
-        {
-            Debug.Log($"=== ºí·° µé¾î¿Ã¸² (curExitList¿¡ Ãß°¡) ===");
-            for (int i = 0; i < checkCells.Count; i++)
-            {
-                Vector3 checkCell = checkCells[i];
-
-                // 1. cellList¿¡ ÇØ´ç ¼¿ÀÌ Á¸ÀçÇÏ´ÂÁö È®ÀÎ
-                Vector3? matchedInCellList = cellList.FirstOrDefault(cell =>
-                    Mathf.Approximately(cell.x, checkCell.x) &&
-                    Mathf.Approximately(cell.y, checkCell.y));
-
-                if (!matchedInCellList.HasValue)
-                {
-                    Debug.Log($"<color=red> ±×¸®µå ¹üÀ§ ¹Û: {checkCell}</color>");
-                    continue;
-                }
-
-                // 2. curExitList¿¡ ÀÌ¹Ì Á¸ÀçÇÏ´ÂÁö È®ÀÎ
-                Vector3? matchedInExitList = curExitList.FirstOrDefault(cell =>
-                    Mathf.Approximately(cell.x, checkCell.x) &&
-                    Mathf.Approximately(cell.y, checkCell.y));
-
-                if (!matchedInExitList.HasValue)
-                {
-                    curExitList.Add(matchedInCellList.Value);
-                    ExitCount++;
-                    Debug.Log($"<color=cyan> µé¾î¿Ã¸² ¼º°ø: {checkCell} ¡æ curExitList¿¡ Ãß°¡</color>");
-                }
-                else
-                {
-                    Debug.Log($"<color=yellow> ÀÌ¹Ì ºñ¾îÀÖ´Â Ä­: {checkCell}</color>");
-                }
-            }
-        }
-
-        Debug.Log($"ÇöÀç ºñ¾îÀÖ´Â Ä­ °³¼ö: {curExitList.Count}/{cellList.Count}");
     }
+
+    private void ChangeVector(List<Vector3> checkCells, List<Vector3> prevCells)
+    {
+        for(int i =0; i < checkCells.Count; i++)
+        {
+            if (cellExitList.Contains(checkCells[i]))
+            {
+                cellExitList.Remove(checkCells[i]);
+                ExitCount--;
+                UpdateCellVisual(checkCells[i], true);
+            }
+            else
+            {
+                if (cellList.Contains(prevCells[i]))
+                {
+                    cellExitList.Add(prevCells[i]);
+                    ExitCount = cellExitList.Count;
+                    UpdateCellVisual(prevCells[i], false);
+                }
+                
+                // ì´ë¯¸ Listì— ì¡´ì¬í•˜ëŠ” í…ŒíŠ¸ë¦¬ìŠ¤ cell
+            }
+
+
+        }
+    }
+
 
     private void FinishCheck(int value)
     {
         if (value == 0)
         {
             StageManager.Instance.UpStage();
-            Debug.Log("½ºÅ×ÀÌÁö ³¡");
+            Debug.Log("ìŠ¤í…Œì´ì§€ ë");
             DrawGridFromChildren();
         }
     }
@@ -235,8 +200,8 @@ public class DrawGrid : Singleton<DrawGrid>
         if (cellList != null)
             cellList.Clear();
 
-        if (curExitList != null)
-            curExitList.Clear();
+        if (cellExitList != null)
+            cellExitList.Clear();
 
         for (int i = transform.childCount - 1; i >= 0; i--)
         {

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -13,6 +12,7 @@ public class TeterisPrefab : PooledObject,
 {
     private TeterisBlock blockSO;
     public Vector3[] childrenPositions;
+    public Vector3[] childrenPrevPositions;
     private int curRotIndex;
 
     private CancellationTokenSource token;
@@ -32,6 +32,9 @@ public class TeterisPrefab : PooledObject,
     private int touchCount;
     private float lastTouchTime;
     private float doubleTouchThreshold = 0.3f;
+
+    //회전 필요 시간
+    private float rotationInterval = 2f;
 
     // 확인용
     public Vector2[] childrenVec;
@@ -53,6 +56,7 @@ public class TeterisPrefab : PooledObject,
         int childCount = transform.childCount;
         childrenPositions = new Vector3[childCount];
         childrenVec = new Vector2[childCount];
+        childrenPrevPositions = new Vector3[childCount];
 
         // ★ 초기화 시점에도 셀 좌표로 저장
         for (int i = 0; i < childCount; i++)
@@ -62,6 +66,7 @@ public class TeterisPrefab : PooledObject,
             Vector3Int cellPos = grid.WorldToCell(childWorldPos);
             childrenPositions[i] = cellPos;
         }
+
 
         EnsureChildColliderAndForwarder();
 
@@ -130,13 +135,32 @@ public class TeterisPrefab : PooledObject,
 
         try
         {
-            await UniTask.Delay(TimeSpan.FromSeconds(1f), cancellationToken: token.Token);
+            // 첫 회전까지 대기
+            await UniTask.Delay(TimeSpan.FromSeconds(rotationInterval), cancellationToken: token.Token);
+
+            // 드래그 중이 아니고 여전히 누르고 있으면 회전
             if (isPointerDown && !isDragging)
             {
                 OnChangeRot?.Invoke();
+                Debug.Log("회전 1회 실행");
+
+                // 계속 누르고 있는 동안 반복
+                while (isPointerDown && !isDragging)
+                {
+                    await UniTask.Delay(TimeSpan.FromSeconds(rotationInterval), cancellationToken: token.Token);
+
+                    if (isPointerDown && !isDragging)
+                    {
+                        OnChangeRot?.Invoke();
+                        Debug.Log("회전 계속 실행");
+                    }
+                }
             }
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+            Debug.Log("회전 타이머 취소됨");
+        }
     }
 
     // ===== Drag =====
@@ -267,7 +291,7 @@ public class TeterisPrefab : PooledObject,
     }
 
     /// <summary>
-    /// ★ 핵심 수정: 모든 자식의 위치를 셀 좌표로 변환하여 저장
+    /// 핵심 수정: 모든 자식의 위치를 셀 좌표로 변환하여 저장
     /// </summary>
     public void ChangeVec()
     {
@@ -278,10 +302,11 @@ public class TeterisPrefab : PooledObject,
 
             // 월드 좌표를 셀 좌표로 변환하여 저장
             Vector3Int cellPos = grid.WorldToCell(childWorldPos);
+            childrenPrevPositions[i] = childrenPositions[i];
             childrenPositions[i] = cellPos;
         }
 
-        DrawGrid.Instance.OnCheckCell?.Invoke(childrenPositions.ToList(), true);
+        DrawGrid.Instance.OnCheckCell?.Invoke(childrenPositions.ToList(), childrenPrevPositions.ToList());
     }
 
     private void CancelTimer()
