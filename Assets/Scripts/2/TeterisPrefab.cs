@@ -11,8 +11,8 @@ public class TeterisPrefab : PooledObject,
     IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private TeterisBlock blockSO;
-    public Vector3[] childrenPositions;
-    public Vector3[] childrenPrevPositions;
+    public Vector3[] childrenPositions;  // ★ Vector3로 변경 (0.5 단위 지원)
+    public Vector3[] childrenPrevPositions;  // ★ Vector3로 변경
     private int curRotIndex;
 
     private CancellationTokenSource token;
@@ -37,7 +37,7 @@ public class TeterisPrefab : PooledObject,
     private float rotationInterval = 2f;
 
     // 확인용
-    public Vector2[] childrenVec;
+    public Vector2[] childrenVec;  // ★ Vector2로 변경 (SO의 blockPos 타입과 일치)
     public event Action OnChangeRot;
 
     private void Awake()
@@ -54,19 +54,24 @@ public class TeterisPrefab : PooledObject,
         grid = _grid;
 
         int childCount = transform.childCount;
-        childrenPositions = new Vector3[childCount];
-        childrenVec = new Vector2[childCount];
-        childrenPrevPositions = new Vector3[childCount];
+        childrenPositions = new Vector3[childCount];  // ★ Vector3 배열
+        childrenVec = new Vector2[childCount];  // ★ Vector2 배열
+        childrenPrevPositions = new Vector3[childCount];  // ★ Vector3 배열
 
-        // ★ 초기화 시점에도 셀 좌표로 저장
+        // ★ 초기화: Grid의 CellToWorld로 정확한 셀 중심 좌표 저장
         for (int i = 0; i < childCount; i++)
         {
             Vector3 childWorldPos = transform.GetChild(i).position;
             childWorldPos.z = 0;
-            Vector3Int cellPos = grid.WorldToCell(childWorldPos);
-            childrenPositions[i] = cellPos;
-        }
 
+            // WorldToCell -> CellToWorld로 정확한 셀 좌표 얻기
+            Vector3Int tempCell = grid.WorldToCell(childWorldPos);
+            Vector3 cellCenterWorld = grid.CellToWorld(tempCell);
+            cellCenterWorld.z = 0;
+
+            childrenPositions[i] = cellCenterWorld;
+            childrenPrevPositions[i] = cellCenterWorld;
+        }
 
         EnsureChildColliderAndForwarder();
 
@@ -78,7 +83,7 @@ public class TeterisPrefab : PooledObject,
 
         OnChangeRot -= ChangeRot;
         OnChangeRot += ChangeRot;
-        
+
         touchCount = 0;
         hasDragOffset = false;
     }
@@ -107,6 +112,7 @@ public class TeterisPrefab : PooledObject,
         isPointerDown = false;
         CancelTimer();
     }
+
     private void CheckTouchCount()
     {
         float currentTime = Time.time;
@@ -120,14 +126,13 @@ public class TeterisPrefab : PooledObject,
         touchCount++;
         lastTouchTime = currentTime;
 
-        Debug.Log($"터치 횟수: {touchCount}");
-
         // 2번 이상 터치 시 할당 해제
         if (touchCount >= 2)
         {
             Outit();
         }
     }
+
     private async UniTaskVoid StartLongPressTimer()
     {
         CancelTimer();
@@ -142,7 +147,6 @@ public class TeterisPrefab : PooledObject,
             if (isPointerDown && !isDragging)
             {
                 OnChangeRot?.Invoke();
-                Debug.Log("회전 1회 실행");
 
                 // 계속 누르고 있는 동안 반복
                 while (isPointerDown && !isDragging)
@@ -152,7 +156,6 @@ public class TeterisPrefab : PooledObject,
                     if (isPointerDown && !isDragging)
                     {
                         OnChangeRot?.Invoke();
-                        Debug.Log("회전 계속 실행");
                     }
                 }
             }
@@ -183,7 +186,6 @@ public class TeterisPrefab : PooledObject,
 
         // 현재 위치를 기준으로 시작
         lastSnappedPosition = transform.position;
-
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -206,11 +208,7 @@ public class TeterisPrefab : PooledObject,
             transform.position = snappedPos;
             lastSnappedPosition = snappedPos;
             UpdateChildrenVecWorld();
-
         }
-
-        // 디버그 필요하면 켜
-        // Debug.Log($"fingerCell={fingerCell} targetCell={targetCell} pos={transform.position}");
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -243,36 +241,37 @@ public class TeterisPrefab : PooledObject,
     {
         curRotIndex = (curRotIndex + 1) % 4;
         ApplyRotation(curRotIndex);
-
-        UpdateChildrenVecWorld();
+        ChangeVec();  // ★ 회전 후 바로 ChangeVec 호출
     }
 
     private void ApplyRotation(int rotIndex)
     {
         if (blockSO == null) return;
 
-        var rot = blockSO.posVectors[rotIndex].blockPos;
+        var rot = blockSO.posVectors[rotIndex].blockPos;  // Vector2[]
 
         for (int i = 0; i < transform.childCount; i++)
         {
             var child = transform.GetChild(i);
             child.GetComponent<SpriteRenderer>().sprite = blockSO.tetrisSprite;
-            child.localPosition = rot[i];
+            child.localPosition = rot[i];  // Vector2를 Vector3로 암시적 변환
         }
 
-        // SO 배열 참조 공유 방지(복사)
+        // ★ SO 배열 참조 공유 방지(복사) - Vector2[] -> Vector2[]
         if (childrenVec == null || childrenVec.Length != rot.Length)
             childrenVec = new Vector2[rot.Length];
 
         Array.Copy(rot, childrenVec, rot.Length);
-        ChangeVec();
     }
 
     private void UpdateChildrenVecWorld()
     {
+        // childrenVec는 localPosition 정보이므로 여기서는 사용하지 않음
+        // 필요시 childrenPositions를 childrenVec에 복사
         for (int i = 0; i < childrenPositions.Length; i++)
-            childrenVec[i] = childrenPositions[i];
-
+        {
+            childrenVec[i] = childrenPositions[i];  // Vector3 -> Vector2 암시적 변환
+        }
     }
 
     private void EnsureChildColliderAndForwarder()
@@ -291,22 +290,34 @@ public class TeterisPrefab : PooledObject,
     }
 
     /// <summary>
-    /// 핵심 수정: 모든 자식의 위치를 셀 좌표로 변환하여 저장
+    /// ★ 핵심: 모든 자식의 위치를 Grid 셀 중심 좌표(Vector3)로 변환하여 저장
     /// </summary>
     public void ChangeVec()
     {
+        // 먼저 이전 위치 백업
+        for (int i = 0; i < childrenPositions.Length; i++)
+        {
+            childrenPrevPositions[i] = childrenPositions[i];
+        }
+
+        // 새 위치 계산
         for (int i = 0; i < transform.childCount; i++)
         {
             Vector3 childWorldPos = transform.GetChild(i).position;
             childWorldPos.z = 0;
 
-            // 월드 좌표를 셀 좌표로 변환하여 저장
-            Vector3Int cellPos = grid.WorldToCell(childWorldPos);
-            childrenPrevPositions[i] = childrenPositions[i];
-            childrenPositions[i] = cellPos;
+            // ★ WorldToCell -> CellToWorld로 정확한 셀 중심 좌표 얻기
+            Vector3Int tempCell = grid.WorldToCell(childWorldPos);
+            Vector3 cellCenterWorld = grid.CellToWorld(tempCell);
+            cellCenterWorld.z = 0;
+
+            childrenPositions[i] = cellCenterWorld;
         }
 
-        DrawGrid.Instance.OnCheckCell?.Invoke(childrenPositions.ToList(), childrenPrevPositions.ToList());
+        DrawGrid.Instance.OnCheckCell?.Invoke(
+            childrenPositions.ToList(),
+            childrenPrevPositions.ToList()
+        );
     }
 
     private void CancelTimer()
@@ -323,6 +334,8 @@ public class TeterisPrefab : PooledObject,
     {
         touchCount = 0;
         childrenPositions = null;
+        childrenPrevPositions = null;
+        childrenVec = null;
         curRotIndex = 0;
         isPointerDown = false;
         isDragging = false;
@@ -332,6 +345,7 @@ public class TeterisPrefab : PooledObject,
         blockSO = null;
         OnChangeRot -= ChangeRot;
     }
+
     public void Outit()
     {
         ResetSetting();

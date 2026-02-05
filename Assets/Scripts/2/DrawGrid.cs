@@ -12,19 +12,51 @@ public class DrawGrid : Singleton<DrawGrid>
     public Grid grid;
     public Color gridColor = Color.cyan;
     public float lineWidth = 0.05f;
-    public List<Vector3> cellList; // 이미 그려진 셀들
-    public List<Vector3> cellExitList; // 현재 사용 가능한 셀들
+    public List<Vector3> cellList; // ★ Vector3로 변경 (0.5 단위 지원)
+    public List<Vector3> cellExitList; // ★ Vector3로 변경
 
     //하이라이트
-    private Dictionary<Vector3, List<LineRenderer>> cellLines = new Dictionary<Vector3, List<LineRenderer>>();
+    private Dictionary<Vector3Int, List<LineRenderer>> cellLines = new Dictionary<Vector3Int, List<LineRenderer>>();
     public Color highlightColor = Color.yellow;
 
     private int exitCount;
-    public int ExitCount { get { return exitCount; } set { exitCount = value;  OnChangeCount?.Invoke(exitCount); } }
+    public int ExitCount { get { return exitCount; } set { exitCount = value; OnChangeCount?.Invoke(exitCount); } }
     public event Action<int> OnChangeCount;
 
-    public Action<List<Vector3>, List<Vector3>> OnCheckCell;
-    public event Action<List<Vector3>> OnDrawAddVec;
+    public Action<List<Vector3>, List<Vector3>> OnCheckCell;  // ★ Vector3로 변경
+    public event Action<List<Vector3>> OnDrawAddVec;  // ★ Vector3로 변경
+
+    // ★ Vector3 비교를 위한 헬퍼 메서드
+    private bool Vector3Equals(Vector3 a, Vector3 b)
+    {
+        const float epsilon = 0.001f;
+        return Mathf.Abs(a.x - b.x) < epsilon &&
+               Mathf.Abs(a.y - b.y) < epsilon &&
+               Mathf.Abs(a.z - b.z) < epsilon;
+    }
+
+    private bool ContainsVector(List<Vector3> list, Vector3 target)
+    {
+        foreach (var v in list)
+        {
+            if (Vector3Equals(v, target))
+                return true;
+        }
+        return false;
+    }
+
+    private bool RemoveVector(List<Vector3> list, Vector3 target)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (Vector3Equals(list[i], target))
+            {
+                list.RemoveAt(i);
+                return true;
+            }
+        }
+        return false;
+    }
 
     void Start()
     {
@@ -33,6 +65,7 @@ public class DrawGrid : Singleton<DrawGrid>
             grid = FindObjectOfType<Grid>();
 
         cellList = new List<Vector3>();
+        cellExitList = new List<Vector3>();
 
         OnDrawAddVec += AddVector;
         OnCheckCell += ChangeVector;
@@ -51,7 +84,7 @@ public class DrawGrid : Singleton<DrawGrid>
     {
         DrawMapClear();
         GameObject stagePrefab = await DataManager.Instance.LoadStagePrefab(StageManager.Instance.curStage);
-        
+
         if (stagePrefab == null)
         {
             Debug.LogWarning("스테이지 프리팹을 로드할 수 없습니다!");
@@ -82,7 +115,11 @@ public class DrawGrid : Singleton<DrawGrid>
                 Transform block = child.GetChild(i);
                 Vector3Int cellPos = grid.WorldToCell(block.position);
                 cellPositions.Add(cellPos);
-                cellList.Add(new Vector3(cellPos.x, cellPos.y, cellPos.z));
+
+                // ★ CellToWorld로 정확한 셀 중심 좌표 저장
+                Vector3 cellCenterWorld = grid.CellToWorld(cellPos);
+                cellCenterWorld.z = 0;
+                cellList.Add(cellCenterWorld);
             }
         }
 
@@ -100,7 +137,7 @@ public class DrawGrid : Singleton<DrawGrid>
 
         OnDrawAddVec.Invoke(cellList);
     }
-    
+
     void DrawCellSquare(Vector3Int cellPos, float cellSizeX, float cellSizeY)
     {
         Vector3 bottomLeft = grid.CellToWorld(cellPos);
@@ -140,14 +177,19 @@ public class DrawGrid : Singleton<DrawGrid>
 
         return lr;
     }
+
     private void AddVector(List<Vector3> cellPositions)
     {
         cellExitList = new List<Vector3>(cellPositions);
         ExitCount = cellExitList.Count;
     }
+
     private void UpdateCellVisual(Vector3 cellPos, bool isOccupied)
     {
-        if (cellLines.TryGetValue(cellPos, out List<LineRenderer> lines))
+        // ★ Vector3를 Vector3Int로 변환하여 딕셔너리 검색
+        Vector3Int cellInt = grid.WorldToCell(cellPos);
+
+        if (cellLines.TryGetValue(cellInt, out List<LineRenderer> lines))
         {
             Color targetColor = isOccupied ? highlightColor : gridColor;
             foreach (var lr in lines)
@@ -158,32 +200,47 @@ public class DrawGrid : Singleton<DrawGrid>
         }
     }
 
+    /// <summary>
+    /// ★ 핵심 로직 수정: 이전 위치 복원 후 새 위치 점유
+    /// </summary>
     private void ChangeVector(List<Vector3> checkCells, List<Vector3> prevCells)
     {
-        for(int i =0; i < checkCells.Count; i++)
+        Debug.Log($"=== ChangeVector 시작 ===");
+        Debug.Log($"checkCells 개수: {checkCells.Count}, prevCells 개수: {prevCells.Count}");
+        Debug.Log($"변경 전 cellExitList 개수: {cellExitList.Count}");
+
+        // 1단계: 이전 위치들을 cellExitList에 다시 추가 (유효한 셀만)
+        for (int i = 0; i < prevCells.Count; i++)
         {
-            if (cellExitList.Contains(checkCells[i]))
+            // cellList에 있는 유효한 셀이고, cellExitList에 없다면 추가
+            if (ContainsVector(cellList, prevCells[i]) && !ContainsVector(cellExitList, prevCells[i]))
             {
-                cellExitList.Remove(checkCells[i]);
-                ExitCount--;
-                UpdateCellVisual(checkCells[i], true);
+                cellExitList.Add(prevCells[i]);
+                UpdateCellVisual(prevCells[i], false);
+                Debug.Log($"이전 위치 복원: {prevCells[i]}");
             }
-            else
-            {
-                if (cellList.Contains(prevCells[i]))
-                {
-                    cellExitList.Add(prevCells[i]);
-                    ExitCount = cellExitList.Count;
-                    UpdateCellVisual(prevCells[i], false);
-                }
-                
-                // 이미 List에 존재하는 테트리스 cell
-            }
-
-
         }
-    }
 
+        // 2단계: 새 위치들을 cellExitList에서 제거
+        for (int i = 0; i < checkCells.Count; i++)
+        {
+            if (ContainsVector(cellExitList, checkCells[i]))
+            {
+                RemoveVector(cellExitList, checkCells[i]);
+                UpdateCellVisual(checkCells[i], true);
+                Debug.Log($"새 위치 점유: {checkCells[i]}");
+            }
+            else if (!ContainsVector(cellList, checkCells[i]))
+            {
+                // 그리드 밖으로 나간 경우
+                Debug.LogWarning($"유효하지 않은 셀 위치: {checkCells[i]}");
+            }
+        }
+
+        ExitCount = cellExitList.Count;
+        Debug.Log($"변경 후 cellExitList 개수: {cellExitList.Count}");
+        Debug.Log($"=== ChangeVector 종료 ===\n");
+    }
 
     private void FinishCheck(int value)
     {
@@ -202,6 +259,9 @@ public class DrawGrid : Singleton<DrawGrid>
 
         if (cellExitList != null)
             cellExitList.Clear();
+
+        if (cellLines != null)
+            cellLines.Clear();
 
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
