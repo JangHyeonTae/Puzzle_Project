@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class ChooseTetris : MonoBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler
@@ -8,8 +9,11 @@ public class ChooseTetris : MonoBehaviour,
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Grid grid;
 
-    private TeterisPrefab currentDrag;
+    Image img;
 
+    private TeterisPrefab currentDrag;
+    [SerializeField] private Color chooseColor;
+    [SerializeField] private Color normalColor;
     private void Start()
     {
         if (mainCamera == null)
@@ -17,10 +21,16 @@ public class ChooseTetris : MonoBehaviour,
 
         if (grid == null)
             grid = FindObjectOfType<Grid>();
+
+        normalColor = Color.white;
+        img = gameObject.GetComponent<Image>();
+        img.color = normalColor;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        img.color = chooseColor;
+
         Vector3 world = mainCamera.ScreenToWorldPoint(eventData.position);
         world.z = 0;
 
@@ -47,12 +57,12 @@ public class ChooseTetris : MonoBehaviour,
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        img.color = normalColor;
         if (currentDrag != null)
         {
             ExecuteEvents.Execute<IEndDragHandler>(
                 currentDrag.gameObject, eventData, ExecuteEvents.endDragHandler);
         }
-
         currentDrag = null;
     }
 }
