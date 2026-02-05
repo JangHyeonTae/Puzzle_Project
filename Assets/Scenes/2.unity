@@ -156,7 +156,8 @@ MonoBehaviour:
   gridColor: {r: 0, g: 1, b: 1, a: 1}
   lineWidth: 0.05
   cellList: []
-  curExitList: []
+  cellExitList: []
+  highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!120 &79323919
 LineRenderer:
   serializedVersion: 2
@@ -327,14 +328,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5568628}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 37cb1f939896db44bb173b7d07412fac, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -367,6 +368,8 @@ MonoBehaviour:
   tetrisSO: {fileID: 11400000, guid: 25095691c305d1b4d974925134206194, type: 2}
   mainCamera: {fileID: 519420031}
   grid: {fileID: 1613658044}
+  chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &338564965
 GameObject:
   m_ObjectHideFlags: 0
@@ -418,14 +421,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5568628}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 2ed68cb055f36334a89b406e178a4046, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -458,6 +461,8 @@ MonoBehaviour:
   tetrisSO: {fileID: 11400000, guid: d70b7f195d22b50469a7a04f3debe5d5, type: 2}
   mainCamera: {fileID: 519420031}
   grid: {fileID: 1613658044}
+  chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &413953543
 GameObject:
   m_ObjectHideFlags: 0
@@ -509,14 +514,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5568628}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: adf2c6489cc5f264aa3da8386534e1a5, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -549,6 +554,8 @@ MonoBehaviour:
   tetrisSO: {fileID: 11400000, guid: 4f32d74469c8fc247a2f23d8b978e997, type: 2}
   mainCamera: {fileID: 519420031}
   grid: {fileID: 1613658044}
+  chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &430558721
 GameObject:
   m_ObjectHideFlags: 0
@@ -600,14 +607,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5568628}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 8e81197e71b8e1f4da7e936a0d418b88, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -640,6 +647,8 @@ MonoBehaviour:
   tetrisSO: {fileID: 11400000, guid: b341a9039542cc644a472e872ac28dfd, type: 2}
   mainCamera: {fileID: 519420031}
   grid: {fileID: 1613658044}
+  chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &450932985
 GameObject:
   m_ObjectHideFlags: 0
@@ -691,14 +700,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5568628}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 764b10d4ff9f01b4ebf93a0d982160ee, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -731,6 +740,8 @@ MonoBehaviour:
   tetrisSO: {fileID: 11400000, guid: 303ab1f27b4b6c74b9d332c9e646f02b, type: 2}
   mainCamera: {fileID: 519420031}
   grid: {fileID: 1613658044}
+  chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &455271826
 GameObject:
   m_ObjectHideFlags: 0
@@ -782,14 +793,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5568628}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: bd2a37b048f20c34bbd8f6888dae5ecc, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -822,6 +833,8 @@ MonoBehaviour:
   tetrisSO: {fileID: 11400000, guid: c9da88300c446fb448872b984dd2997a, type: 2}
   mainCamera: {fileID: 519420031}
   grid: {fileID: 1613658044}
+  chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &511934790
 GameObject:
   m_ObjectHideFlags: 0
@@ -1084,14 +1097,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5568628}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 13be0a6a990528b469fc652f4850b3e7, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1124,6 +1137,8 @@ MonoBehaviour:
   tetrisSO: {fileID: 11400000, guid: 0b6a932500d4d0f44b61b5e69ad9787d, type: 2}
   mainCamera: {fileID: 519420031}
   grid: {fileID: 1613658044}
+  chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &747974609
 GameObject:
   m_ObjectHideFlags: 0
