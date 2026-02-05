@@ -14,7 +14,9 @@ public class TeterisPrefab : PooledObject,
     public Vector3[] childrenPositions; 
     public Vector3[] childrenPrevPositions;
     public Vector3[] childrenReturnPositions;
+    private Vector3 prevPos;
     private int curRotIndex;
+    private int prevRotIndex;
 
     private CancellationTokenSource token;
     private bool isPointerDown;
@@ -58,6 +60,7 @@ public class TeterisPrefab : PooledObject,
         childrenVec = new Vector2[childCount];  
         childrenPrevPositions = new Vector3[childCount];
         childrenReturnPositions = new Vector3[childCount];
+        prevPos = Vector3.zero;
 
         for (int i = 0; i < childCount; i++)
         {
@@ -77,6 +80,7 @@ public class TeterisPrefab : PooledObject,
         EnsureChildColliderAndForwarder();
 
         curRotIndex = 0;
+        prevRotIndex = 0;
         ApplyRotation(curRotIndex);
 
         lastSnappedPosition = transform.position;
@@ -102,6 +106,7 @@ public class TeterisPrefab : PooledObject,
     {
         isPointerDown = true;
         isDragging = false;
+        prevRotIndex = curRotIndex;
         CheckTouchCount();
 
         StartLongPressTimer().Forget();
@@ -110,6 +115,17 @@ public class TeterisPrefab : PooledObject,
     public void OnPointerUp(PointerEventData eventData)
     {
         isPointerDown = false;
+
+        for (int i = 0; i < childrenPositions.Length; i++)
+        {
+            if (!DrawGrid.Instance.OnCheck(childrenPositions[i]))
+            {
+                curRotIndex = prevRotIndex;
+                ApplyRotation(curRotIndex);
+            }
+        }
+        
+
         CancelTimer();
     }
 
@@ -164,6 +180,8 @@ public class TeterisPrefab : PooledObject,
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (grid == null || mainCamera == null) return;
+
+        prevPos = gameObject.transform.position;
 
         isDragging = true;
         CancelTimer();
@@ -292,16 +310,18 @@ public class TeterisPrefab : PooledObject,
             Vector3 cellCenterWorld = grid.CellToWorld(tempCell);
             cellCenterWorld.z = 0;
 
-            childrenPositions[i] = cellCenterWorld;
-
-            // 겹칠경우 !DrawGrid.Instance.OnCheck(childrenPositions[i])이거는 잘 동작함
-            // 예외처리 잘 해야할듯
-            if (!DrawGrid.Instance.OnCheck(childrenPositions[i]))
+            if (!isPointerDown)
             {
-                childrenPositions = (Vector3[])childrenPrevPositions.Clone();
-                childrenPrevPositions = (Vector3[])childrenReturnPositions.Clone();
-
-                return;
+                if (!DrawGrid.Instance.OnCheck(cellCenterWorld))
+                {
+                    gameObject.transform.position = prevPos;
+                    childrenPrevPositions = (Vector3[])childrenReturnPositions.Clone();
+                    childrenPositions = (Vector3[])childrenPrevPositions.Clone();
+                }
+                else
+                {
+                    childrenPositions[i] = cellCenterWorld;
+                }
             }
         }
         DrawGrid.Instance.OnCheckCell?.Invoke(
