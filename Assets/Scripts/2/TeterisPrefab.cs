@@ -15,6 +15,9 @@ public class TeterisPrefab : PooledObject,
     public Vector3[] childrenPrevPositions;
     public Vector3[] childrenReturnPositions;
     private Vector3 prevPos;
+
+    public Vector3[] curInPos;
+
     private int curRotIndex;
     private int prevRotIndex;
 
@@ -38,8 +41,6 @@ public class TeterisPrefab : PooledObject,
     //회전 필요 시간
     private float rotationInterval = 2f;
 
-    // 확인용
-    public Vector2[] childrenVec; 
     public event Action OnChangeRot;
 
     private void Awake()
@@ -57,11 +58,10 @@ public class TeterisPrefab : PooledObject,
 
         int childCount = transform.childCount;
         childrenPositions = new Vector3[childCount]; 
-        childrenVec = new Vector2[childCount];  
         childrenPrevPositions = new Vector3[childCount];
         childrenReturnPositions = new Vector3[childCount];
         prevPos = Vector3.zero;
-
+        curInPos = new Vector3[childCount];
         for (int i = 0; i < childCount; i++)
         {
             Vector3 childWorldPos = transform.GetChild(i).position;
@@ -118,7 +118,11 @@ public class TeterisPrefab : PooledObject,
 
         for (int i = 0; i < childrenPositions.Length; i++)
         {
-            if (!DrawGrid.Instance.OnCheck(childrenPositions[i]))
+            if (DrawGrid.Instance.OnCheck(childrenPositions[i]) || DrawGrid.Instance.OnCheckIsMine(this))
+            {
+                continue;
+            }
+            else
             {
                 curRotIndex = prevRotIndex;
                 ApplyRotation(curRotIndex);
@@ -216,7 +220,6 @@ public class TeterisPrefab : PooledObject,
         {
             transform.position = snappedPos;
             lastSnappedPosition = snappedPos;
-            UpdateChildrenVecWorld();
         }
     }
 
@@ -242,7 +245,6 @@ public class TeterisPrefab : PooledObject,
 
         transform.position = snapped;
         lastSnappedPosition = snapped;
-        UpdateChildrenVecWorld();
     }
 
     private void ChangeRot()
@@ -263,19 +265,6 @@ public class TeterisPrefab : PooledObject,
             var child = transform.GetChild(i);
             child.GetComponent<SpriteRenderer>().sprite = blockSO.tetrisSprite;
             child.localPosition = rot[i]; 
-        }
-
-        if (childrenVec == null || childrenVec.Length != rot.Length)
-            childrenVec = new Vector2[rot.Length];
-
-        Array.Copy(rot, childrenVec, rot.Length);
-    }
-
-    private void UpdateChildrenVecWorld()
-    {
-        for (int i = 0; i < childrenPositions.Length; i++)
-        {
-            childrenVec[i] = childrenPositions[i]; 
         }
     }
 
@@ -324,10 +313,11 @@ public class TeterisPrefab : PooledObject,
                 }
             }
         }
-        DrawGrid.Instance.OnCheckCell?.Invoke(
+
+        curInPos = DrawGrid.Instance.OnCheckCell?.Invoke(
             childrenPositions.ToList(),
             childrenPrevPositions.ToList()
-        );
+        ).ToArray();
     }
 
     private void CancelTimer()
@@ -345,7 +335,6 @@ public class TeterisPrefab : PooledObject,
         touchCount = 0;
         childrenPositions = null;
         childrenPrevPositions = null;
-        childrenVec = null;
         curRotIndex = 0;
         isPointerDown = false;
         isDragging = false;

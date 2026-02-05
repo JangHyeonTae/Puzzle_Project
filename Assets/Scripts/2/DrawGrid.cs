@@ -19,9 +19,10 @@ public class DrawGrid : Singleton<DrawGrid>
     public int ExitCount { get { return exitCount; } set { exitCount = value; OnChangeCount?.Invoke(exitCount); } }
     public event Action<int> OnChangeCount;
 
-    public Action<List<Vector3>, List<Vector3>> OnCheckCell;
+    public Func<List<Vector3>, List<Vector3>, List<Vector3>> OnCheckCell;
     public event Action<List<Vector3>> OnDrawAddVec;
     public Func<Vector3, bool> OnCheck;
+    public Func<TeterisPrefab, bool> OnCheckIsMine;
 
     private bool Vector3Equals(Vector3 a, Vector3 b)
     {
@@ -66,6 +67,7 @@ public class DrawGrid : Singleton<DrawGrid>
         OnCheckCell += ChangeVector;
         OnChangeCount += FinishCheck;
         OnCheck += CheckPos;
+        OnCheckIsMine += CheckIsMine;
         DrawGridFromChildren();
     }
 
@@ -75,6 +77,7 @@ public class DrawGrid : Singleton<DrawGrid>
         OnCheckCell -= ChangeVector;
         OnChangeCount -= FinishCheck;
         OnCheck -= CheckPos;
+        OnCheckIsMine -= CheckIsMine;
     }
 
     async void DrawGridFromChildren()
@@ -190,14 +193,16 @@ public class DrawGrid : Singleton<DrawGrid>
         }
     }
 
-    private void ChangeVector(List<Vector3> checkCells, List<Vector3> prevCells)
+    private List<Vector3> ChangeVector(List<Vector3> checkCells, List<Vector3> prevCells)
     {
+        List<Vector3> list = new List<Vector3>();
         for (int i = 0; i < prevCells.Count; i++)
         {
             if (ContainsVector(cellList, prevCells[i]) && !ContainsVector(cellExitList, prevCells[i]))
             {
                 cellExitList.Add(prevCells[i]);
                 UpdateCellVisual(prevCells[i], false);
+                list.Remove(checkCells[i]);
             }
         }
 
@@ -207,6 +212,7 @@ public class DrawGrid : Singleton<DrawGrid>
             {
                 RemoveVector(cellExitList, checkCells[i]);
                 UpdateCellVisual(checkCells[i], true);
+                list.Add(checkCells[i]);
             }
             else if (!ContainsVector(cellList, checkCells[i]))
             {
@@ -215,6 +221,7 @@ public class DrawGrid : Singleton<DrawGrid>
         }
 
         ExitCount = cellExitList.Count;
+        return list;
     }
 
     private bool CheckPos(Vector3 cellPos)
@@ -230,6 +237,26 @@ public class DrawGrid : Singleton<DrawGrid>
                 return false;
             }
         }
+        return true;
+    }
+
+    private bool CheckIsMine(TeterisPrefab tetris)
+    {
+        if (tetris == null && tetris.curInPos == null)
+            return false;
+
+        for(int i =0; i < tetris.curInPos.Length; i++)
+        {
+            if (cellList.Contains(tetris.curInPos[i]) && !cellExitList.Contains(tetris.curInPos[i]))
+            {
+                continue;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         return true;
     }
 
