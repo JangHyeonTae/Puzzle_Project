@@ -118,7 +118,7 @@ public class TeterisPrefab : PooledObject,
 
         for (int i = 0; i < childrenPositions.Length; i++)
         {
-            if (DrawGrid.Instance.OnCheck(childrenPositions[i]) || DrawGrid.Instance.OnCheckIsMine(this))
+            if (DrawGrid.Instance.OnCheck(childrenPositions[i]) || DrawGrid.Instance.OnCheckIsMine(childrenPositions.ToList(),this))
             {
                 continue;
             }
@@ -284,40 +284,42 @@ public class TeterisPrefab : PooledObject,
 
     public void ChangeVec()
     {
-        for (int i = 0; i < childrenPositions.Length; i++)
-        {
-            childrenReturnPositions[i] = childrenPrevPositions[i];
-            childrenPrevPositions[i] = childrenPositions[i];
-        }
-
+        List<Vector3> nextPositions = new List<Vector3>();
         for (int i = 0; i < transform.childCount; i++)
         {
             Vector3 childWorldPos = transform.GetChild(i).position;
-            childWorldPos.z = 0;
-
             Vector3Int tempCell = grid.WorldToCell(childWorldPos);
             Vector3 cellCenterWorld = grid.CellToWorld(tempCell);
             cellCenterWorld.z = 0;
+            nextPositions.Add(cellCenterWorld);
+        }
 
-            if (!isPointerDown)
+        if (!isPointerDown)
+        {
+            bool isValidMove = true;
+            foreach (var pos in nextPositions)
             {
-                if (!DrawGrid.Instance.OnCheck(cellCenterWorld))
+                if (!DrawGrid.Instance.OnCheck(pos) && !curInPos.ToList().Contains(pos))
                 {
-                    gameObject.transform.position = prevPos;
-                    childrenPrevPositions = (Vector3[])childrenReturnPositions.Clone();
-                    childrenPositions = (Vector3[])childrenPrevPositions.Clone();
+                    isValidMove = false;
+                    break;
                 }
-                else
-                {
-                    childrenPositions[i] = cellCenterWorld;
-                }
+            }
+
+            if (!isValidMove)
+            {
+                transform.position = prevPos;
+                return;
             }
         }
 
-        curInPos = DrawGrid.Instance.OnCheckCell?.Invoke(
-            childrenPositions.ToList(),
-            childrenPrevPositions.ToList()
-        ).ToArray();
+        List<Vector3> prevOccupied = curInPos != null ? curInPos.ToList() : new List<Vector3>();
+
+        var result = DrawGrid.Instance.OnCheckCell?.Invoke(nextPositions, prevOccupied,this);
+
+        curInPos = result.ToArray();
+        childrenPositions = nextPositions.ToArray();
+        prevPos = transform.position;
     }
 
     private void CancelTimer()

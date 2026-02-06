@@ -11,6 +11,7 @@ public class DrawGrid : Singleton<DrawGrid>
     public float lineWidth = 0.05f;
     public List<Vector3> cellList;
     public List<Vector3> cellExitList;
+    public Dictionary<Vector3, TeterisPrefab> cellDic = new Dictionary<Vector3, TeterisPrefab>();
 
     private Dictionary<Vector3Int, List<LineRenderer>> cellLines = new Dictionary<Vector3Int, List<LineRenderer>>();
     public Color highlightColor = Color.yellow;
@@ -19,10 +20,10 @@ public class DrawGrid : Singleton<DrawGrid>
     public int ExitCount { get { return exitCount; } set { exitCount = value; OnChangeCount?.Invoke(exitCount); } }
     public event Action<int> OnChangeCount;
 
-    public Func<List<Vector3>, List<Vector3>, List<Vector3>> OnCheckCell;
+    public Func<List<Vector3>, List<Vector3>,TeterisPrefab, List<Vector3>> OnCheckCell;
     public event Action<List<Vector3>> OnDrawAddVec;
     public Func<Vector3, bool> OnCheck;
-    public Func<TeterisPrefab, bool> OnCheckIsMine;
+    public Func<List<Vector3>,TeterisPrefab, bool> OnCheckIsMine;
 
     private bool Vector3Equals(Vector3 a, Vector3 b)
     {
@@ -193,35 +194,42 @@ public class DrawGrid : Singleton<DrawGrid>
         }
     }
 
-    private List<Vector3> ChangeVector(List<Vector3> checkCells, List<Vector3> prevCells)
+    private List<Vector3> ChangeVector(List<Vector3> checkCells, List<Vector3> prevCells, TeterisPrefab tetris)
     {
-        List<Vector3> list = new List<Vector3>();
-        for (int i = 0; i < prevCells.Count; i++)
+        List<Vector3> currentlyOccupiedByMe = new List<Vector3>();
+
+        // 이전 위치들을 다시 사용 가능한 리스트(cellExitList)로 복구
+        foreach (var pPos in prevCells)
         {
-            if (ContainsVector(cellList, prevCells[i]) && !ContainsVector(cellExitList, prevCells[i]))
+            // 전체 그리드(cellList)에 포함된 좌표이고, 아직 탈출 리스트에 없다면 추가
+            if (ContainsVector(cellList, pPos) && !ContainsVector(cellExitList, pPos))
             {
-                cellExitList.Add(prevCells[i]);
-                UpdateCellVisual(prevCells[i], false);
-                list.Remove(checkCells[i]);
+                cellDic.Add(pPos, tetris);
+                cellExitList.Add(pPos);
+                UpdateCellVisual(pPos, false);
             }
         }
 
-        for (int i = 0; i < checkCells.Count; i++)
+        // 새로운 위치들을 점유 (cellExitList에서 제거)
+        foreach (var cPos in checkCells)
         {
-            if (ContainsVector(cellExitList, checkCells[i]))
+            if (ContainsVector(cellExitList, cPos))
             {
-                RemoveVector(cellExitList, checkCells[i]);
-                UpdateCellVisual(checkCells[i], true);
-                list.Add(checkCells[i]);
+                if(cellDic.TryGetValue(cPos, out TeterisPrefab value))
+                    cellDic.Remove(cPos);
+
+                RemoveVector(cellExitList, cPos);
+                UpdateCellVisual(cPos, true);
+                currentlyOccupiedByMe.Add(cPos);
             }
-            else if (!ContainsVector(cellList, checkCells[i]))
+            else if (ContainsVector(cellList, cPos))
             {
-                Debug.LogWarning($"유효하지 않은 셀 위치: {checkCells[i]}");
+                Debug.LogWarning($"이미 점유된 셀 또는 중복 점유 시도: {cPos}");
             }
         }
 
         ExitCount = cellExitList.Count;
-        return list;
+        return currentlyOccupiedByMe;
     }
 
     private bool CheckPos(Vector3 cellPos)
@@ -240,16 +248,17 @@ public class DrawGrid : Singleton<DrawGrid>
         return true;
     }
 
-    private bool CheckIsMine(TeterisPrefab tetris)
+    private bool CheckIsMine(List<Vector3> list, TeterisPrefab tetris)
     {
-        if (tetris == null && tetris.curInPos == null)
+        if (cellDic == null && tetris == null)
             return false;
 
-        for(int i =0; i < tetris.curInPos.Length; i++)
+        for(int i =0; i < list.Count; i++)
         {
-            if (cellList.Contains(tetris.curInPos[i]) && !cellExitList.Contains(tetris.curInPos[i]))
+            if (cellDic.TryGetValue(list[i], out TeterisPrefab value))
             {
-                continue;
+                if (value == tetris && cellList.Contains(list[i]) && !cellExitList.Contains(list[i]))
+                    continue;
             }
             else
             {
@@ -258,6 +267,24 @@ public class DrawGrid : Singleton<DrawGrid>
         }
 
         return true;
+
+        //if (tetris == null && tetris.curInPos == null)
+        //    return false;
+
+        //for(int i =0; i < tetris.curInPos.Length; i++)
+        //{
+        //    if (cellList.Contains(tetris.curInPos[i]) && 
+        //        !cellExitList.Contains(tetris.curInPos[i]) &&
+        //        cellDic[tetris.curInPos[i]] == tetris)
+        //    {
+        //        continue;
+        //    }
+        //    else
+        //    {
+        //        return false;
+        //    }
+        //}
+
     }
 
     private void FinishCheck(int value)
@@ -279,6 +306,9 @@ public class DrawGrid : Singleton<DrawGrid>
 
         if (cellLines != null)
             cellLines.Clear();
+
+        if(cellDic != null)
+            cellDic.Clear();
 
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
