@@ -1139,6 +1139,51 @@ MonoBehaviour:
   grid: {fileID: 1613658044}
   chooseColor: {r: 0.43529412, g: 0.43529412, b: 0.43529412, a: 0.5529412}
   normalColor: {r: 1, g: 1, b: 1, a: 0}
+--- !u!1 &701687199
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 701687201}
+  - component: {fileID: 701687200}
+  m_Layer: 0
+  m_Name: UIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &701687200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 701687199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4f25def64e6cd4c9e01bb99e6cbc94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <setCanvasScale>k__BackingField: {x: 1080, y: 1920}
+--- !u!4 &701687201
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 701687199}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &747974609
 GameObject:
   m_ObjectHideFlags: 0
@@ -1586,3 +1631,4 @@ SceneRoots:
   - {fileID: 511934794}
   - {fileID: 747974611}
   - {fileID: 905915819}
+  - {fileID: 701687201}
