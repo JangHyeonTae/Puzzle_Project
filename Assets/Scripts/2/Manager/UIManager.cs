@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class UIManager : Singleton<UIManager>
 {
-    private Canvas canvas;
+    public Canvas canvas { get; private set; }
     private CanvasScaler canvasScaler;
     [field : SerializeField] public Vector2 setCanvasScale { get; private set; }
     private RectTransform rect;
