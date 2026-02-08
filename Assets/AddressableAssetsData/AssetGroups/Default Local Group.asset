@@ -32,6 +32,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e3d2d9d8468c8a4ebbe65fa8c285932
+    m_Address: Assets/Prefabs/UI/UIDemo
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ddd0116da8464dc479dc07468de27205
     m_Address: TetrisSample
     m_ReadOnly: 0
