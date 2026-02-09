@@ -325,7 +325,11 @@ public class TeterisPrefab : PooledObject,
 
         List<Vector3> prevOccupied = curInPos != null ? curInPos.ToList() : new List<Vector3>();
 
+
         var result = DrawGrid.Instance.OnCheckCell?.Invoke(nextPositions, prevOccupied, this);
+        if (result == null)
+            result = new List<Vector3>();
+
         curInPos = result.ToArray();
 
         if (result != null && result.Count > 0 && !isPointerDown && !isDragging)
@@ -357,6 +361,7 @@ public class TeterisPrefab : PooledObject,
 
         childrenPositions = nextPositions.ToArray();
         prevPos = transform.position;
+
     }
 
     private void CancelTimer()
@@ -387,10 +392,19 @@ public class TeterisPrefab : PooledObject,
 
     public void Outit()
     {
+        Debug.Log("outit");
         // 중요: 오브젝트가 사라지기 전에 점유 중인 칸을 그리드에 반납
         if (curInPos != null && curInPos.Length > 0)
         {
             DrawGrid.Instance.OnCheckCell?.Invoke(new List<Vector3>(), curInPos.ToList(), this);
+        }
+
+        for (int i = 0; i < childrenPositions.Length; i++)
+        {
+            if (DrawGrid.Instance.outList.Contains(childrenPositions[i]))
+            {
+                DrawGrid.Instance.outList.Remove(childrenPositions[i]);
+            }
         }
 
         ResetSetting();

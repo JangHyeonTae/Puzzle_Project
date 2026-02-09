@@ -7,52 +7,32 @@ public class DrawGrid : Singleton<DrawGrid>
 {
     public Grid grid;
     public Color gridColor = Color.cyan;
+    public Color highlightColor = Color.yellow;
     public float lineWidth = 0.05f;
-    public List<Vector3> cellList;
-    public List<Vector3> cellExitList;
+
+    public List<Vector3> cellList = new List<Vector3>();
+    public List<Vector3> cellExitList = new List<Vector3>();
+    public List<Vector3> outList = new List<Vector3>();
+
+    // 진실 데이터
     public Dictionary<Vector3, TeterisPrefab> cellDic = new Dictionary<Vector3, TeterisPrefab>();
 
     private Dictionary<Vector3Int, List<LineRenderer>> cellLines = new Dictionary<Vector3Int, List<LineRenderer>>();
-    public Color highlightColor = Color.yellow;
-
-    private int exitCount;
-    public int ExitCount { get { return exitCount; } set { exitCount = value; OnChangeCount?.Invoke(exitCount); } }
-    public event Action<int> OnChangeCount;
 
     public Func<List<Vector3>, List<Vector3>, TeterisPrefab, List<Vector3>> OnCheckCell;
-    public event Action<List<Vector3>> OnDrawAddVec;
     public Func<Vector3, bool> OnCheck;
     public Func<List<Vector3>, TeterisPrefab, bool> OnCheckIsMine;
+    public event Action<int> OnChangeCount;
 
-    private bool Vector3Equals(Vector3 a, Vector3 b)
+    private int exitCount;
+    public int ExitCount
     {
-        const float epsilon = 0.001f;
-        return Mathf.Abs(a.x - b.x) < epsilon &&
-               Mathf.Abs(a.y - b.y) < epsilon &&
-               Mathf.Abs(a.z - b.z) < epsilon;
-    }
-
-    private bool ContainsVector(List<Vector3> list, Vector3 target)
-    {
-        foreach (var v in list)
+        get => exitCount;
+        set
         {
-            if (Vector3Equals(v, target))
-                return true;
+            exitCount = value;
+            OnChangeCount?.Invoke(exitCount);
         }
-        return false;
-    }
-
-    private bool RemoveVector(List<Vector3> list, Vector3 target)
-    {
-        for (int i = 0; i < list.Count; i++)
-        {
-            if (Vector3Equals(list[i], target))
-            {
-                list.RemoveAt(i);
-                return true;
-            }
-        }
-        return false;
     }
 
     void Start()
@@ -60,202 +40,194 @@ public class DrawGrid : Singleton<DrawGrid>
         if (grid == null)
             grid = FindObjectOfType<Grid>();
 
-        cellList = new List<Vector3>();
-        cellExitList = new List<Vector3>();
-
-        OnDrawAddVec += AddVector;
         OnCheckCell += ChangeVector;
-        OnChangeCount += FinishCheck;
         OnCheck += CheckPos;
         OnCheckIsMine += CheckIsMine;
+        OnChangeCount += FinishCheck;
 
         DrawGridFromChildren();
     }
 
     private void OnDestroy()
     {
-        OnDrawAddVec -= AddVector;
         OnCheckCell -= ChangeVector;
-        OnChangeCount -= FinishCheck;
         OnCheck -= CheckPos;
         OnCheckIsMine -= CheckIsMine;
+        OnChangeCount -= FinishCheck;
     }
 
     async void DrawGridFromChildren()
     {
-        DrawMapClear();
+        ClearAll();
+
         GameObject stagePrefab = await DataManager.Instance.LoadStagePrefab(StageManager.Instance.curStage);
-
         if (stagePrefab == null) return;
-        if (grid == null) grid = FindObjectOfType<Grid>();
 
-        float cellSizeX = grid.cellSize.x;
-        float cellSizeY = grid.cellSize.y;
         HashSet<Vector3Int> cellPositions = new HashSet<Vector3Int>();
 
         foreach (Transform child in stagePrefab.transform)
         {
-            for (int i = 0; i < child.childCount; i++)
+            foreach (Transform block in child)
             {
-                Transform block = child.GetChild(i);
-                Vector3Int cellPos = grid.WorldToCell(block.position);
-                cellPositions.Add(cellPos);
+                Vector3Int cell = grid.WorldToCell(block.position);
+                cellPositions.Add(cell);
 
-                Vector3 cellCenterWorld = grid.GetCellCenterWorld(cellPos);
-                cellCenterWorld.z = 0;
-                cellList.Add(cellCenterWorld);
+                Vector3 center = grid.GetCellCenterWorld(cell);
+                center.z = 0;
+                cellList.Add(center);
             }
         }
 
-        if (cellPositions.Count == 0) return;
+        foreach (var cell in cellPositions)
+            DrawCellSquare(cell);
 
-        foreach (Vector3Int cellPos in cellPositions)
-        {
-            DrawCellSquare(cellPos, cellSizeX, cellSizeY);
-        }
-
-        OnDrawAddVec.Invoke(cellList);
+        RebuildCellExitList();
+        RebuildOutList();
     }
 
-    void DrawCellSquare(Vector3Int cellPos, float cellSizeX, float cellSizeY)
+    void DrawCellSquare(Vector3Int cellPos)
     {
-        Vector3 bottomLeft = grid.CellToWorld(cellPos);
-        Vector3 bottomRight = bottomLeft + new Vector3(cellSizeX, 0, 0);
-        Vector3 topLeft = bottomLeft + new Vector3(0, cellSizeY, 0);
-        Vector3 topRight = bottomLeft + new Vector3(cellSizeX, cellSizeY, 0);
+        Vector3 size = grid.cellSize;
+        Vector3 bl = grid.CellToWorld(cellPos);
+        Vector3 br = bl + new Vector3(size.x, 0);
+        Vector3 tl = bl + new Vector3(0, size.y);
+        Vector3 tr = bl + new Vector3(size.x, size.y);
 
-        List<LineRenderer> lines = new List<LineRenderer>();
-        lines.Add(CreateLine(bottomLeft, bottomRight));
-        lines.Add(CreateLine(bottomRight, topRight));
-        lines.Add(CreateLine(topRight, topLeft));
-        lines.Add(CreateLine(topLeft, bottomLeft));
+        List<LineRenderer> lines = new List<LineRenderer>
+        {
+            CreateLine(bl, br),
+            CreateLine(br, tr),
+            CreateLine(tr, tl),
+            CreateLine(tl, bl)
+        };
 
         cellLines[cellPos] = lines;
     }
 
-    LineRenderer CreateLine(Vector3 start, Vector3 end)
+    LineRenderer CreateLine(Vector3 a, Vector3 b)
     {
-        GameObject lineObj = new GameObject("GridLine");
-        lineObj.transform.SetParent(transform);
+        GameObject go = new GameObject("GridLine");
+        go.transform.SetParent(transform);
 
-        LineRenderer lr = lineObj.AddComponent<LineRenderer>();
+        LineRenderer lr = go.AddComponent<LineRenderer>();
         lr.material = new Material(Shader.Find("Sprites/Default"));
-        lr.startColor = gridColor;
-        lr.endColor = gridColor;
         lr.startWidth = lineWidth;
         lr.endWidth = lineWidth;
         lr.positionCount = 2;
-        lr.useWorldSpace = true;
         lr.sortingOrder = 100;
+        lr.startColor = gridColor;
+        lr.endColor = gridColor;
 
-        start.z = 0; end.z = 0;
-        lr.SetPosition(0, start);
-        lr.SetPosition(1, end);
+        a.z = b.z = 0;
+        lr.SetPosition(0, a);
+        lr.SetPosition(1, b);
 
         return lr;
     }
 
-    private void AddVector(List<Vector3> cellPositions)
-    {
-        cellExitList = new List<Vector3>(cellPositions);
-        ExitCount = cellExitList.Count;
-    }
-
-    private void UpdateCellVisual(Vector3 cellPos, bool isOccupied)
-    {
-        Vector3Int cellInt = grid.WorldToCell(cellPos);
-        if (cellLines.TryGetValue(cellInt, out List<LineRenderer> lines))
-        {
-            Color targetColor = isOccupied ? highlightColor : gridColor;
-            foreach (var lr in lines)
-            {
-                lr.startColor = targetColor;
-                lr.endColor = targetColor;
-            }
-        }
-    }
-
     private List<Vector3> ChangeVector(List<Vector3> checkCells, List<Vector3> prevCells, TeterisPrefab tetris)
     {
-        List<Vector3> currentlyOccupiedByMe = new List<Vector3>();
+        List<Vector3> occupied = new List<Vector3>();
 
-        // 1. 이전 위치 복구 (이 블록이 점유하고 있던 칸만 반납)
-        foreach (var pPos in prevCells)
+        // 이전 점유 제거
+        foreach (var prev in prevCells)
         {
-            if (cellDic.TryGetValue(pPos, out TeterisPrefab owner) && owner == tetris)
-            {
-                cellDic.Remove(pPos);
-                if (ContainsVector(cellList, pPos) && !ContainsVector(cellExitList, pPos))
-                {
-                    cellExitList.Add(pPos);
-                    UpdateCellVisual(pPos, false);
-                }
-            }
+            if (cellDic.TryGetValue(prev, out var owner) && owner == tetris)
+                cellDic.Remove(prev);
         }
 
-        // 2. 새로운 위치 점유
-        foreach (var cPos in checkCells)
+        // 새 점유 등록
+        foreach (var pos in checkCells)
         {
-            if (ContainsVector(cellExitList, cPos))
-            {
-                if (cellDic.ContainsKey(cPos)) cellDic.Remove(cPos);
+            if (cellDic.TryGetValue(pos, out var owner) && owner != tetris)
+                continue;
 
-                RemoveVector(cellExitList, cPos);
-                cellDic.Add(cPos, tetris);
-                UpdateCellVisual(cPos, true);
-                currentlyOccupiedByMe.Add(cPos);
-            }
+            cellDic[pos] = tetris;
+            occupied.Add(pos);
         }
+
+        RebuildCellExitList();
+        RebuildOutList();
 
         ExitCount = cellExitList.Count;
-        return currentlyOccupiedByMe;
+        return occupied;
     }
 
-    private bool CheckPos(Vector3 cellPos)
+    private void RebuildCellExitList()
     {
-        if (ContainsVector(cellList, cellPos))
-        {
-            return ContainsVector(cellExitList, cellPos);
-        }
-        return true;
-    }
+        cellExitList.Clear();
 
-    private bool CheckIsMine(List<Vector3> list, TeterisPrefab tetris)
-    {
-        if (cellDic == null || tetris == null) return false;
-
-        foreach (var pos in list)
+        foreach (var cell in cellList)
         {
-            if (cellDic.TryGetValue(pos, out TeterisPrefab owner))
+            if (!cellDic.ContainsKey(cell))
             {
-                // 점유자가 나이고, 전체 리스트에 있으며, 현재 비어있지 않은 칸이라면 통과
-                if (owner == tetris && ContainsVector(cellList, pos) && !ContainsVector(cellExitList, pos))
-                    continue;
+                cellExitList.Add(cell);
+                UpdateCellVisual(cell, false);
             }
-            return false;
+            else
+            {
+                UpdateCellVisual(cell, true);
+            }
+        }
+    }
+
+    private void RebuildOutList()
+    {
+        outList.Clear();
+
+        foreach (var pair in cellDic)
+        {
+            if (!cellList.Contains(pair.Key))
+                outList.Add(pair.Key);
+        }
+    }
+
+    private bool CheckPos(Vector3 pos)
+    {
+        return !cellDic.ContainsKey(pos);
+    }
+
+    private bool CheckIsMine(List<Vector3> cells, TeterisPrefab tetris)
+    {
+        foreach (var pos in cells)
+        {
+            if (!cellDic.TryGetValue(pos, out var owner) || owner != tetris)
+                return false;
         }
         return true;
     }
 
-    private void FinishCheck(int value)
+    private void UpdateCellVisual(Vector3 pos, bool occupied)
     {
-        if (value == 0)
+        Vector3Int cell = grid.WorldToCell(pos);
+        if (!cellLines.TryGetValue(cell, out var lines)) return;
+
+        Color c = occupied ? highlightColor : gridColor;
+        foreach (var lr in lines)
+        {
+            lr.startColor = c;
+            lr.endColor = c;
+        }
+    }
+
+    private void FinishCheck(int _)
+    {
+        if (cellExitList.Count == 0 && outList.Count == 0)
         {
             StageManager.Instance.UpStage();
             DrawGridFromChildren();
         }
     }
 
-    private void DrawMapClear()
+    private void ClearAll()
     {
-        cellList?.Clear();
-        cellExitList?.Clear();
-        cellLines?.Clear();
-        cellDic?.Clear();
+        cellList.Clear();
+        cellExitList.Clear();
+        outList.Clear();
+        cellDic.Clear();
+        cellLines.Clear();
 
         for (int i = transform.childCount - 1; i >= 0; i--)
-        {
             Destroy(transform.GetChild(i).gameObject);
-        }
     }
 }
