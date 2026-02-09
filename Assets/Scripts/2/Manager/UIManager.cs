@@ -7,7 +7,6 @@ using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.UI.CanvasScaler;
 
 public enum PopupAnimationType
 {
@@ -26,7 +25,6 @@ public enum PopupAnimationType
 public class UIManager : Singleton<UIManager>
 {
     private Canvas mainCanvas;
-    private Canvas clickCanvas;
     private CanvasScaler canvasScaler;
     [field: SerializeField] public Vector2 setCanvasScale { get; private set; }
     private RectTransform rect;
@@ -34,46 +32,43 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private PooledObject popupPrefab; // 팝업 프리팹
     private ObjectPool popupPool;
 
-    [SerializeField] private PooledObject clickPrefab;
-    private ObjectPool clickPool;
-
-    private Dictionary<int, ClickUI> clickUIDictionary;
+    UIStack uiStack;
 
     protected void Awake()
     {
         base.Awake();
-        clickUIDictionary = new Dictionary<int, ClickUI>();
         // if : Inst Canvas 
         CheckCanvas().Forget();
     }
 
+    // UIManager.cs 수정 부분
     private async UniTaskVoid CheckCanvas()
     {
+        if (uiStack == null)
+            uiStack = new UIStack();
+
         if (mainCanvas == null)
         {
-            var obj = await DataManager.Instance.LoadData("MainCanavs");
-            mainCanvas = Instantiate(obj).GetComponent<Canvas>();
-            //mainCanvas.GetOrAddComponent<CanvasScaler>();
-            //mainCanvas.GetOrAddComponent<GraphicRaycaster>();
-            mainCanvas.transform.SetParent(transform);
+            var obj = await DataManager.Instance.LoadData("MainCanvas");
+            if (obj != null)
+            {
+                mainCanvas = Instantiate(obj).GetComponent<Canvas>();
+                mainCanvas.transform.SetParent(transform);
+            }
         }
 
-        if (clickCanvas == null)
+        // [중요] 필드에 직접 할당해야 null 에러가 발생하지 않습니다.
+        if (popupPrefab != null)
         {
-            var obj = await DataManager.Instance.LoadData("ClickCanvas");
-            clickCanvas = Instantiate(obj).GetComponent<Canvas>();
-            clickCanvas.transform.SetParent(transform);
+            var parent = new GameObject("PopUpParent");
+            parent.transform.SetParent(mainCanvas.transform);
+            // 직접 필드에 생성자를 호출하여 할당
+            popupPool = new ObjectPool(popupPrefab, 50, parent.transform);
         }
-
-        // Canvas가 준비된 후에 설정
-        //canvasScaler = mainCanvas.GetComponent<CanvasScaler>();
-        //rect = mainCanvas.GetComponent<RectTransform>();
-        //SetCanvasScale();
-        //RectScale();
-
-        // Pool 초기화 (Canvas가 준비된 후)
-        SetPool(popupPool, popupPrefab, "PopUpParent", 50);
-        SetPool(clickPool, clickPrefab, "ClickParent", 20);
+        else
+        {
+            Debug.LogError("UIManager: popupPrefab이 Inspector에서 할당되지 않았습니다!");
+        }
     }
 
     private void SetPool(ObjectPool pool, PooledObject ui, string parentName, int size)
@@ -83,24 +78,15 @@ public class UIManager : Singleton<UIManager>
         pool = new ObjectPool(ui, size, parent.transform);
     }
 
-    //public async UniTask ShowClickPopUp(int value)
-    //{
-    //    var data = await UILoadData($"UI{value}");
-    //    clickCanvas.GetComponent<UIStack>().AddUI(data);
-        
-    //}
-    //private async UniTask UILoadData(string s)
-    //{
-    //    var inst = await DataManager.Instance.LoadData(s);
-    //    var data = clickPool.GetPooled(inst) as PooledObject;
-    //    PooledObject obj = clickPool.GetPooled(data);
-    //}
-    public void CloseClickPopUp()
+    public void AddPopUp(BaseUI ui)
     {
-
+        uiStack.AddUI(ui);
     }
 
-
+    public void RemovePopUp()
+    {
+        uiStack.RemoveUI();
+    }
 
     #region 초기세팅
     private void SetCanvasScale()
@@ -131,15 +117,13 @@ public class UIManager : Singleton<UIManager>
         PopupAnimationType animationType = PopupAnimationType.FadeScale,
         float animationDuration = 0.3f,
         Vector2? position = null,
-        int fontSize = 24,
+        int fontSize = 100,
         Color? textColor = null,
-        Color? backgroundColor = null,
         Ease ease = Ease.OutQuad,
         Action onComplete = null)
     {
         // Pool에서 가져오기
         PopUpPrefab popup = popupPool.GetPooled() as PopUpPrefab;
-        popup.transform.SetParent(mainCanvas.transform, false);
         popup.transform.SetAsLastSibling();
 
         // 컴포넌트 가져오기
@@ -149,7 +133,7 @@ public class UIManager : Singleton<UIManager>
         CanvasGroup canvasGroup = popup.GetOrAddComponent<CanvasGroup>();
 
         // 초기화
-        popup.Init(message, fontSize, textColor, backgroundColor);
+        popup.Init(message, fontSize, textColor);
 
         // 위치 설정
         Vector2 targetPosition = position ?? Vector2.zero;

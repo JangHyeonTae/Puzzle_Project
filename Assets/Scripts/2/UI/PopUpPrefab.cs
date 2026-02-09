@@ -25,10 +25,7 @@ public class PopUpPrefab : PooledObject
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
     }
 
-    /// <summary>
-    /// 팝업 초기화
-    /// </summary>
-    public void Init(string message, int fontSize, Color? textColor, Color? backgroundColor)
+    public void Init(string message, int fontSize, Color? textColor)
     {
         // 텍스트 설정
         if (messageText != null)
@@ -36,12 +33,6 @@ public class PopUpPrefab : PooledObject
             messageText.text = message;
             messageText.fontSize = fontSize;
             messageText.color = textColor ?? Color.white;
-        }
-
-        // 배경 색상 설정
-        if (backgroundImage != null)
-        {
-            backgroundImage.color = backgroundColor ?? new Color(0, 0, 0, 0.8f);
         }
 
         // CanvasGroup 초기화
@@ -55,9 +46,6 @@ public class PopUpPrefab : PooledObject
         transform.localRotation = Quaternion.identity;
     }
 
-    /// <summary>
-    /// Pool로 반환하기 전 정리
-    /// </summary>
     public void Cleanup()
     {
         // DOTween 애니메이션 정리
@@ -71,9 +59,6 @@ public class PopUpPrefab : PooledObject
             canvasGroup.alpha = 0f;
     }
 
-    /// <summary>
-    /// Pool로 반환 (오버라이드)
-    /// </summary>
     public new void Release(float delay = 0f)
     {
         Cleanup();

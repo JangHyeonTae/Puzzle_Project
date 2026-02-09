@@ -3,43 +3,43 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UIStack : MonoBehaviour
+public class UIStack
 {
-    private Stack<ClickUI> clickStack = new Stack<ClickUI>();
+    public Stack<BaseUI> popUpStack = new Stack<BaseUI>();
 
-    public void AddUI(ClickUI popup)
+    public void AddUI(BaseUI popup)
     {
-        if (clickStack.Count > 0)
+        if (popUpStack.Count > 0)
         {
-            var top = clickStack.Peek();
+            var top = popUpStack.Peek();
             top.Outit();
         }
 
-        clickStack.Push(popup);
-        var inst = clickStack.Peek();
+        popUpStack.Push(popup);
+        var inst = popUpStack.Peek();
         inst.Init();
     }
 
     public void RemoveUI()
     {
-        if (clickStack.Count == 0)
+        if (popUpStack.Count == 0)
             return;
 
-        ClickUI top = clickStack.Pop();
+        BaseUI top = popUpStack.Pop();
         top.Outit();
 
-        if (clickStack.Count > 0)
+        if (popUpStack.Count > 0)
         {
-            top = clickStack.Peek();
+            top = popUpStack.Peek();
             top.Init();
         }
     }
 
     public void AllRemoveUI()
     {
-        while (clickStack.Count > 0)
+        while (popUpStack.Count > 0)
         {
-            ClickUI top = clickStack.Peek();
+            BaseUI top = popUpStack.Peek();
             top.Outit();
         }
     }
