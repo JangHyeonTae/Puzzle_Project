@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +25,8 @@ public class TeterisPrefab : PooledObject,
     private CancellationTokenSource token;
     private bool isPointerDown;
     private bool isDragging;
-    private bool isRotating;
+    private bool isRotating; 
+    private bool isOuting;
 
     private Camera mainCamera;
     private Grid grid;
@@ -161,7 +163,7 @@ public class TeterisPrefab : PooledObject,
 
         if (touchCount >= 2)
         {
-            Outit();
+            Outit().Forget();
         }
     }
 
@@ -407,9 +409,14 @@ public class TeterisPrefab : PooledObject,
         resultPos = null;
     }
 
-    public void Outit()
+    public async UniTaskVoid Outit()
     {
-        // 오브젝트가 사라지기 전에 점유 중인 칸을 그리드에 반납
+        if (isOuting)
+            return;
+
+        isOuting = true;
+
+        // 점유 반납
         if (resultPos != null && resultPos.Length > 0)
         {
             DrawGrid.Instance.OnCheckCell?.Invoke(new List<Vector3>(), resultPos.ToList(), this);
@@ -423,8 +430,40 @@ public class TeterisPrefab : PooledObject,
             }
         }
 
+        Release(1);
+        await PlayOutAnimation();
+    }
+
+    private async UniTask PlayOutAnimation()
+    {
+
+        Vector3 startPos = transform.position;
+        Vector3 endPos = startPos + Vector3.down * 5f;
+
+        float duration = 0.8f;
+
+        Sequence seq = DOTween.Sequence();
+
+        seq.Join(
+            transform.DORotate(
+                new Vector3(0, 0, 360f),
+                duration,
+                RotateMode.FastBeyond360
+            )
+        );
+
+        seq.Join(
+            transform.DOMove(endPos, duration)
+                .SetEase(Ease.InCubic)
+        );
+
+
+        await UniTask.Delay(1000);
+
+        await seq.AsyncWaitForCompletion();
+
         ResetSetting();
         CancelTimer();
-        Release();
     }
+
 }

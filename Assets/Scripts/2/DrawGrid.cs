@@ -83,6 +83,8 @@ public class DrawGrid : Singleton<DrawGrid>
 
         RebuildCellExitList();
         RebuildOutList();
+
+        StageManager.Instance.isStageChange = false;
     }
 
     void DrawCellSquare(Vector3Int cellPos)
@@ -212,10 +214,14 @@ public class DrawGrid : Singleton<DrawGrid>
         }
     }
 
-    private void FinishCheck(int _)
+    private void FinishCheck(int value)
     {
-        if (cellExitList.Count == 0 && outList.Count == 0)
+        if (StageManager.Instance.isStageChange)
+            return;
+
+        if (value== 0 && outList.Count == 0)
         {
+            StageManager.Instance.isStageChange = true;
             StageManager.Instance.moveCount = 0;
             StageManager.Instance.UpStage();
             DrawGridFromChildren();

@@ -6,7 +6,7 @@ public class StageManager : Singleton<StageManager>
 {
     public int curStage;
     public int moveCount;
-
+    public bool isStageChange;
 
     public TeterisPrefab tetrisPrefab;
     public ObjectPool tetrisPool;
@@ -61,7 +61,7 @@ public class StageManager : Singleton<StageManager>
             if (child.gameObject.activeSelf)
             {
                 var data = child.GetComponent<TeterisPrefab>();
-                data.Outit();
+                data.Outit().Forget();
             }
         }
 

@@ -48,8 +48,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98edafd56f8749c4887236201b747e36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  childrenVec: []
-  beginOffset: 0.5
+  childrenPositions: []
+  childrenPrevPositions: []
+  childrenReturnPositions: []
+  resultPos: []
 --- !u!1 &5147803172214178227
 GameObject:
   m_ObjectHideFlags: 0
