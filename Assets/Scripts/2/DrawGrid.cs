@@ -134,6 +134,7 @@ public class DrawGrid : Singleton<DrawGrid>
         {
             if (cellDic.TryGetValue(prev, out var owner) && owner == tetris)
                 cellDic.Remove(prev);
+
         }
 
         // 새 점유 등록
@@ -143,6 +144,7 @@ public class DrawGrid : Singleton<DrawGrid>
                 continue;
 
             cellDic[pos] = tetris;
+
             occupied.Add(pos);
         }
 
@@ -214,6 +216,7 @@ public class DrawGrid : Singleton<DrawGrid>
     {
         if (cellExitList.Count == 0 && outList.Count == 0)
         {
+            StageManager.Instance.moveCount = 0;
             StageManager.Instance.UpStage();
             DrawGridFromChildren();
         }

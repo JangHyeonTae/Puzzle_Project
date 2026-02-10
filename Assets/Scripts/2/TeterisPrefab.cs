@@ -16,7 +16,7 @@ public class TeterisPrefab : PooledObject,
     public Vector3[] childrenReturnPositions;
     private Vector3 prevPos;
 
-    public Vector3[] curInPos;
+    public Vector3[] resultPos;
 
     private int curRotIndex;
     private int prevRotIndex;
@@ -24,6 +24,7 @@ public class TeterisPrefab : PooledObject,
     private CancellationTokenSource token;
     private bool isPointerDown;
     private bool isDragging;
+    private bool isRotating;
 
     private Camera mainCamera;
     private Grid grid;
@@ -61,12 +62,12 @@ public class TeterisPrefab : PooledObject,
         childrenPrevPositions = new Vector3[childCount];
         childrenReturnPositions = new Vector3[childCount];
         prevPos = transform.position; // 현재 위치 저장
-        curInPos = new Vector3[childCount];
+        resultPos = new Vector3[childCount];
 
         for (int i = 0; i < childCount; i++)
         {
             // (0,0,0) 버그 방지를 위해 초기값을 그리드 밖으로 설정
-            curInPos[i] = new Vector3(-9999f, -9999f, -9999f);
+            resultPos[i] = new Vector3(-9999f, -9999f, -9999f);
 
             Vector3 childWorldPos = transform.GetChild(i).position;
             childWorldPos.z = 0;
@@ -256,10 +257,14 @@ public class TeterisPrefab : PooledObject,
 
     private void ChangeRot()
     {
+        isRotating = true;
+
         prevRotIndex = curRotIndex; // 이전 회전값 저장
         curRotIndex = (curRotIndex + 1) % 4;
         ApplyRotation(curRotIndex);
         ChangeVec();
+
+        isRotating = false;
     }
 
     private void ApplyRotation(int rotIndex)
@@ -293,6 +298,9 @@ public class TeterisPrefab : PooledObject,
     public void ChangeVec()
     {
         List<Vector3> nextPositions = new List<Vector3>();
+        bool isMoveConfirmed = !isRotating && !isDragging && !isPointerDown;
+
+
         for (int i = 0; i < transform.childCount; i++)
         {
             Vector3 childWorldPos = transform.GetChild(i).position;
@@ -309,7 +317,7 @@ public class TeterisPrefab : PooledObject,
             foreach (var pos in nextPositions)
             {
                 // 빈 칸이 아니고, 내가 점유한 칸도 아니라면
-                if (!DrawGrid.Instance.OnCheck(pos) && !curInPos.Contains(pos))
+                if (!DrawGrid.Instance.OnCheck(pos) && !childrenPositions.Contains(pos))
                 {
                     isValidMove = false;
                     break;
@@ -323,22 +331,31 @@ public class TeterisPrefab : PooledObject,
             }
         }
 
-        List<Vector3> prevOccupied = curInPos != null ? curInPos.ToList() : new List<Vector3>();
+        List<Vector3> prevOccupied = resultPos != null ? resultPos.ToList() : new List<Vector3>();
 
 
         var result = DrawGrid.Instance.OnCheckCell?.Invoke(nextPositions, prevOccupied, this);
+        int count = 0;
+
         if (result == null)
             result = new List<Vector3>();
 
-        curInPos = result.ToArray();
+        resultPos = result.ToArray();
+        for (int i = 0; i < resultPos.Length; i++)
+        {
+            if (DrawGrid.Instance.cellList.Contains(resultPos[i]))
+            {
+                count++;
+            }
+        }
 
-        if (result != null && result.Count > 0 && !isPointerDown && !isDragging)
+        if (result != null && result.Count > 0 && isMoveConfirmed)
         {
             Vector3 worldPos = result[0];
             Vector2 screenPos = mainCamera.WorldToScreenPoint(worldPos);
             Vector2 uiPos = screenPos;// - new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
 
-            switch(curInPos.Length)
+            switch(count)
             {
                 case 0:
                     UIManager.Instance.ShowPopUp("Bad", 0.3f, PopupAnimationType.Punch, 0.2f, uiPos, textColor: Color.red).Forget();
@@ -356,7 +373,7 @@ public class TeterisPrefab : PooledObject,
                     UIManager.Instance.ShowPopUp("Excellent", 0.3f, PopupAnimationType.Punch, 0.2f, uiPos, textColor: Color.cyan).Forget();
                     break;
             }
-            
+            StageManager.Instance.moveCount++;
         }
 
         childrenPositions = nextPositions.ToArray();
@@ -387,16 +404,15 @@ public class TeterisPrefab : PooledObject,
         hasDragOffset = false;
         blockSO = null;
         OnChangeRot -= ChangeRot;
-        curInPos = null;
+        resultPos = null;
     }
 
     public void Outit()
     {
-        Debug.Log("outit");
-        // 중요: 오브젝트가 사라지기 전에 점유 중인 칸을 그리드에 반납
-        if (curInPos != null && curInPos.Length > 0)
+        // 오브젝트가 사라지기 전에 점유 중인 칸을 그리드에 반납
+        if (resultPos != null && resultPos.Length > 0)
         {
-            DrawGrid.Instance.OnCheckCell?.Invoke(new List<Vector3>(), curInPos.ToList(), this);
+            DrawGrid.Instance.OnCheckCell?.Invoke(new List<Vector3>(), resultPos.ToList(), this);
         }
 
         for (int i = 0; i < childrenPositions.Length; i++)

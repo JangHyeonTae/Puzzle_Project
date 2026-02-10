@@ -5,6 +5,9 @@ using UnityEngine;
 public class StageManager : Singleton<StageManager>
 {
     public int curStage;
+    public int moveCount;
+
+
     public TeterisPrefab tetrisPrefab;
     public ObjectPool tetrisPool;
     public GameObject tetrisParent;

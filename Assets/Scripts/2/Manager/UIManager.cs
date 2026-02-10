@@ -37,11 +37,9 @@ public class UIManager : Singleton<UIManager>
     protected void Awake()
     {
         base.Awake();
-        // if : Inst Canvas 
         CheckCanvas().Forget();
     }
 
-    // UIManager.cs 수정 부분
     private async UniTaskVoid CheckCanvas()
     {
         if (uiStack == null)
@@ -57,12 +55,10 @@ public class UIManager : Singleton<UIManager>
             }
         }
 
-        // [중요] 필드에 직접 할당해야 null 에러가 발생하지 않습니다.
         if (popupPrefab != null)
         {
             var parent = new GameObject("PopUpParent");
             parent.transform.SetParent(mainCanvas.transform);
-            // 직접 필드에 생성자를 호출하여 할당
             popupPool = new ObjectPool(popupPrefab, 50, parent.transform);
         }
         else
@@ -74,7 +70,7 @@ public class UIManager : Singleton<UIManager>
     private void SetPool(ObjectPool pool, PooledObject ui, string parentName, int size)
     {
         var parent = new GameObject(parentName);
-        parent.transform.SetParent(mainCanvas.transform); // mainCanvas의 자식으로 설정
+        parent.transform.SetParent(mainCanvas.transform);
         pool = new ObjectPool(ui, size, parent.transform);
     }
 
@@ -88,7 +84,7 @@ public class UIManager : Singleton<UIManager>
         uiStack.RemoveUI();
     }
 
-    #region 초기세팅
+    #region PopUp Dotween
     private void SetCanvasScale()
     {
         mainCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -108,9 +104,6 @@ public class UIManager : Singleton<UIManager>
         rect.localRotation = Quaternion.identity;
     }
 
-    /// <summary>
-    /// 팝업을 표시합니다. (DOTween 버전)
-    /// </summary>
     public async UniTask ShowPopUp(
         string message,
         float duration = 2f,
@@ -122,49 +115,36 @@ public class UIManager : Singleton<UIManager>
         Ease ease = Ease.OutQuad,
         Action onComplete = null)
     {
-        // Pool에서 가져오기
         PopUpPrefab popup = popupPool.GetPooled() as PopUpPrefab;
         popup.transform.SetAsLastSibling();
 
-        // 컴포넌트 가져오기
         RectTransform popupRect = popup.GetComponent<RectTransform>();
         TextMeshProUGUI textComponent = popup.GetComponentInChildren<TextMeshProUGUI>();
         Image backgroundImage = popup.GetComponent<Image>();
         CanvasGroup canvasGroup = popup.GetOrAddComponent<CanvasGroup>();
 
-        // 초기화
         popup.Init(message, fontSize, textColor);
 
-        // 위치 설정
         Vector2 targetPosition = position ?? Vector2.zero;
 
-        // 애니메이션 인 효과
         await PlayShowAnimation(popup.gameObject, popupRect, canvasGroup, targetPosition, animationType, animationDuration, ease);
 
-        // 대기
         await UniTask.Delay(TimeSpan.FromSeconds(duration));
 
-        // 애니메이션 아웃 효과
         await PlayHideAnimation(popup.gameObject, popupRect, canvasGroup, targetPosition, animationType, animationDuration, ease);
 
-        // Pool로 반환
         popup.Release();
 
-        // 콜백 실행
         onComplete?.Invoke();
     }
 
-    /// <summary>
-    /// 간단한 팝업 표시 (기본 설정)
-    /// </summary>
+    // 간단한 팝업 표시 (기본 설정)
     public async UniTask ShowSimplePopUp(string message, float duration = 2f, PopupAnimationType animationType = PopupAnimationType.FadeScale)
     {
         await ShowPopUp(message, duration, animationType);
     }
 
-    /// <summary>
-    /// 팝업 등장 애니메이션
-    /// </summary>
+    // 팝업 등장 애니메이션
     private async UniTask PlayShowAnimation(GameObject popup, RectTransform popupRect, CanvasGroup canvasGroup,
         Vector2 targetPosition, PopupAnimationType animationType, float duration, Ease ease)
     {
@@ -250,9 +230,7 @@ public class UIManager : Singleton<UIManager>
         await sequence.AsyncWaitForCompletion();
     }
 
-    /// <summary>
-    /// 팝업 퇴장 애니메이션
-    /// </summary>
+    // 팝업 퇴장 애니메이션
     private async UniTask PlayHideAnimation(GameObject popup, RectTransform popupRect, CanvasGroup canvasGroup,
         Vector2 currentPosition, PopupAnimationType animationType, float duration, Ease ease)
     {
