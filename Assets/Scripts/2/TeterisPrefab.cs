@@ -26,7 +26,7 @@ public class TeterisPrefab : PooledObject,
     private bool isPointerDown;
     private bool isDragging;
     private bool isRotating; 
-    private bool isOuting;
+    public bool isOuting;
 
     private Camera mainCamera;
     private Grid grid;
@@ -351,7 +351,7 @@ public class TeterisPrefab : PooledObject,
             }
         }
 
-        if (result != null && result.Count > 0 && isMoveConfirmed)
+        if (result != null && result.Count > 0 && isMoveConfirmed && !StageManager.Instance.isStageChange)
         {
             Vector3 worldPos = result[0];
             Vector2 screenPos = mainCamera.WorldToScreenPoint(worldPos);
@@ -430,7 +430,6 @@ public class TeterisPrefab : PooledObject,
             }
         }
 
-        Release(1);
         await PlayOutAnimation();
     }
 
@@ -438,7 +437,7 @@ public class TeterisPrefab : PooledObject,
     {
 
         Vector3 startPos = transform.position;
-        Vector3 endPos = startPos + Vector3.down * 5f;
+        Vector3 endPos = startPos + Vector3.down * 10f;
 
         float duration = 0.8f;
 
@@ -461,9 +460,11 @@ public class TeterisPrefab : PooledObject,
         await UniTask.Delay(1000);
 
         await seq.AsyncWaitForCompletion();
+        isOuting = false;
 
         ResetSetting();
         CancelTimer();
+        Release();
     }
 
 }
