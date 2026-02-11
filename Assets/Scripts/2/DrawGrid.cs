@@ -9,6 +9,7 @@ public class DrawGrid : Singleton<DrawGrid>
     public Color gridColor = Color.cyan;
     public Color highlightColor = Color.yellow;
     public float lineWidth = 0.05f;
+    public StagePrefab stagePrefab;
 
     public List<Vector3> cellList = new List<Vector3>();
     public List<Vector3> cellExitList = new List<Vector3>();
@@ -60,22 +61,23 @@ public class DrawGrid : Singleton<DrawGrid>
     {
         ClearAll();
 
-        GameObject stagePrefab = await DataManager.Instance.LoadStagePrefab(StageManager.Instance.curStage);
+        var inst = await DataManager.Instance.LoadStagePrefab(StageManager.Instance.curStage);
+        stagePrefab = inst.GetComponent<StagePrefab>();
+
         if (stagePrefab == null) return;
+
+        stagePrefab.Init(); // ★ 반드시 호출
 
         HashSet<Vector3Int> cellPositions = new HashSet<Vector3Int>();
 
-        foreach (Transform child in stagePrefab.transform)
+        foreach (var pos in stagePrefab.BlockPositions)
         {
-            foreach (Transform block in child)
-            {
-                Vector3Int cell = grid.WorldToCell(block.position);
-                cellPositions.Add(cell);
+            Vector3Int cell = grid.WorldToCell(pos);
+            cellPositions.Add(cell);
 
-                Vector3 center = grid.GetCellCenterWorld(cell);
-                center.z = 0;
-                cellList.Add(center);
-            }
+            Vector3 center = grid.GetCellCenterWorld(cell);
+            center.z = 0;
+            cellList.Add(center);
         }
 
         foreach (var cell in cellPositions)
@@ -86,6 +88,7 @@ public class DrawGrid : Singleton<DrawGrid>
 
         StageManager.Instance.isStageChange = false;
     }
+
 
     void DrawCellSquare(Vector3Int cellPos)
     {

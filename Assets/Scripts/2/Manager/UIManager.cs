@@ -40,6 +40,7 @@ public class UIManager : Singleton<UIManager>
         CheckCanvas().Forget();
     }
 
+
     private async UniTaskVoid CheckCanvas()
     {
         if (uiStack == null)
