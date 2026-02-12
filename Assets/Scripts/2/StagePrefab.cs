@@ -5,7 +5,7 @@ public class StagePrefab : MonoBehaviour
 {
     private List<Vector3> blockPositions = new List<Vector3>();
     private List<Sprite> blockSprites = new List<Sprite>();
-
+    public int[] stageMoveLevel;
     public IReadOnlyList<Vector3> BlockPositions => blockPositions;
     public IReadOnlyList<Sprite> BlockSprites => blockSprites;
 

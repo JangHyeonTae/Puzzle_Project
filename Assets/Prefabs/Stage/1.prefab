@@ -1941,6 +1941,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cfd7831eb5ecd842ae90771957f0add, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  stageMoveLevel: 1e000000140000000a000000
 --- !u!1 &7868285843263959103
 GameObject:
   m_ObjectHideFlags: 0

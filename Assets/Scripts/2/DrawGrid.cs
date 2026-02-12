@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
@@ -36,6 +38,8 @@ public class DrawGrid : Singleton<DrawGrid>
         }
     }
 
+    private CancellationTokenSource drawCts;
+
     void Start()
     {
         if (grid == null)
@@ -46,27 +50,43 @@ public class DrawGrid : Singleton<DrawGrid>
         OnCheckIsMine += CheckIsMine;
         OnChangeCount += FinishCheck;
 
-        DrawGridFromChildren();
+        DrawGridFromChildren().Forget();
     }
 
     private void OnDestroy()
     {
+        drawCts?.Cancel();
+        drawCts?.Dispose();
+
         OnCheckCell -= ChangeVector;
         OnCheck -= CheckPos;
         OnCheckIsMine -= CheckIsMine;
         OnChangeCount -= FinishCheck;
     }
 
-    async void DrawGridFromChildren()
+    public async UniTask DrawGridFromChildren()
     {
-        ClearAll();
+        drawCts?.Cancel();
+        drawCts?.Dispose();
+        drawCts = new CancellationTokenSource();
 
-        var inst = await DataManager.Instance.LoadStagePrefab(StageManager.Instance.curStage);
+        var token = drawCts.Token;
+
+
+        var inst = await DataManager.Instance
+            .LoadStagePrefab(StageManager.Instance.curStage)
+            .AttachExternalCancellation(token);
+
+        if (token.IsCancellationRequested)
+            return;
+
         stagePrefab = inst.GetComponent<StagePrefab>();
+        if (stagePrefab == null)
+            return;
 
-        if (stagePrefab == null) return;
+        stagePrefab.Init();
 
-        stagePrefab.Init(); // ★ 반드시 호출
+        Array.Copy(stagePrefab.stageMoveLevel,StageManager.Instance.curStageMoveLevel,stagePrefab.stageMoveLevel.Length);
 
         HashSet<Vector3Int> cellPositions = new HashSet<Vector3Int>();
 
@@ -88,6 +108,7 @@ public class DrawGrid : Singleton<DrawGrid>
 
         StageManager.Instance.isStageChange = false;
     }
+
 
 
     void DrawCellSquare(Vector3Int cellPos)
@@ -219,15 +240,17 @@ public class DrawGrid : Singleton<DrawGrid>
 
     private void FinishCheck(int value)
     {
+        if (StageManager.Instance == null)
+            return;
+
         if (StageManager.Instance.isStageChange)
             return;
 
-        if (value== 0 && outList.Count == 0)
+        if (value == 0 && outList.Count == 0)
         {
             StageManager.Instance.isStageChange = true;
-            StageManager.Instance.moveCount = 0;
-            StageManager.Instance.UpStage();
-            DrawGridFromChildren();
+            StageManager.Instance.ClearStage();
+            ClearAll();
         }
     }
 

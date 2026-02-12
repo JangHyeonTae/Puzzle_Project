@@ -1,39 +1,61 @@
+using Cysharp.Threading.Tasks;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 public class StageManager : Singleton<StageManager>
 {
     public int curStage;
     public int moveCount;
+    public int[] curStageMoveLevel;
     public bool isStageChange;
 
     public TeterisPrefab tetrisPrefab;
     public ObjectPool tetrisPool;
     public GameObject tetrisParent;
 
+    public event Action OnClearStage;
 
     private StageClearAnim stageClearAnim;
+    private CancellationTokenSource stageCts;
 
     protected void Awake()
     {
         base.Awake();
+
+        stageCts = new CancellationTokenSource();
+
         curStage = 1;
 
-        if(stageClearAnim == null )
+        if (stageClearAnim == null)
             stageClearAnim = GetComponentInChildren<StageClearAnim>(true);
+
+        curStageMoveLevel = new int[3];
     }
 
     private void Start()
     {
-        FindTetris();
+        InitStage().Forget();
+    }
+    private void OnDestroy()
+    {
+        stageCts?.Cancel();
+        stageCts?.Dispose();
     }
 
-    private async void FindTetris()
+    private async UniTaskVoid InitStage()
     {
-        if(tetrisPrefab == null)
+        var token = stageCts.Token;
+
+        if (tetrisPrefab == null)
         {
-            var data = await DataManager.Instance.LoadTetrisPrefab();
+            var data = await DataManager.Instance.LoadTetrisPrefab().AttachExternalCancellation(token);
+
+            if (token.IsCancellationRequested)
+                return;
+
             TeterisPrefab inst = data.GetComponent<TeterisPrefab>();
             tetrisPrefab = inst;
         }
@@ -50,11 +72,6 @@ public class StageManager : Singleton<StageManager>
         tetrisParent.transform.parent = this.transform;
         tetrisPool = new ObjectPool(tetrisPrefab, 100, tetrisParent.transform, false);
     }
-    public void UpStage()
-    {
-        curStage++;
-        ClearStage();
-    }
 
     public void ClearStage()
     {
@@ -68,10 +85,12 @@ public class StageManager : Singleton<StageManager>
             if (child.gameObject.activeSelf)
             {
                 var data = child.GetComponent<TeterisPrefab>();
-
-                
                 data.Outit().Forget();
             }
         }
+
+        OnClearStage?.Invoke();
     }
+
+    
 }
