@@ -3,6 +3,16 @@ using UnityEngine;
 
 public class StagePrefab : MonoBehaviour
 {
+    [SerializeField] private TeterisBlock[] tetrisSO;
+    public TeterisBlock[] TetrisSO => tetrisSO;
+
+    [ SerializeField] private Transform[] tetrisPrefabPos;
+    public Transform[] TetrisPrefabPos => tetrisPrefabPos;
+
+    [ SerializeField] private int[] tetrisRotIndex;
+    public int[] TetrisRotIndex => tetrisRotIndex;
+
+
     private List<Vector3> blockPositions = new List<Vector3>();
     private List<Sprite> blockSprites = new List<Sprite>();
     public int[] stageMoveLevel;
@@ -25,5 +35,8 @@ public class StagePrefab : MonoBehaviour
                 blockSprites.Add(sr.sprite);
             }
         }
+            
+
     }
+
 }

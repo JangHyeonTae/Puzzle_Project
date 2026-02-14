@@ -1,12 +1,15 @@
 ﻿using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
 public class DrawGrid : Singleton<DrawGrid>
 {
+    [SerializeField] private TeterisPrefab tetrisPrefabOrigin;
+
     public Grid grid;
     public Color gridColor = Color.cyan;
     public Color highlightColor = Color.yellow;
@@ -72,6 +75,8 @@ public class DrawGrid : Singleton<DrawGrid>
 
         var token = drawCts.Token;
 
+        await UniTask.WaitUntil(() => StageManager.Instance != null);
+        await UniTask.WaitUntil(() => StageManager.Instance.tetrisPool != null);
 
         var inst = await DataManager.Instance
             .LoadStagePrefab(StageManager.Instance.curStage)
@@ -86,7 +91,9 @@ public class DrawGrid : Singleton<DrawGrid>
 
         stagePrefab.Init();
 
-        Array.Copy(stagePrefab.stageMoveLevel,StageManager.Instance.curStageMoveLevel,stagePrefab.stageMoveLevel.Length);
+        Array.Copy(stagePrefab.stageMoveLevel,
+                   StageManager.Instance.curStageMoveLevel,
+                   stagePrefab.stageMoveLevel.Length);
 
         HashSet<Vector3Int> cellPositions = new HashSet<Vector3Int>();
 
@@ -99,6 +106,10 @@ public class DrawGrid : Singleton<DrawGrid>
             center.z = 0;
             cellList.Add(center);
         }
+        await UniTask.WaitUntil(() =>
+            StageManager.Instance != null &&
+            StageManager.Instance.tetrisPool != null);
+        SpawnStageTetris();
 
         foreach (var cell in cellPositions)
             DrawCellSquare(cell);
@@ -107,6 +118,66 @@ public class DrawGrid : Singleton<DrawGrid>
         RebuildOutList();
 
         StageManager.Instance.isStageChange = false;
+    }
+
+
+    private void SpawnStageTetris()
+    {
+        if (stagePrefab == null)
+        {
+            Debug.LogError("stagePrefab is NULL");
+            return;
+        }
+
+        var soArr = stagePrefab.TetrisSO;
+        var points = stagePrefab.TetrisPrefabPos;
+        var rotArr = stagePrefab.TetrisRotIndex;
+
+        if (soArr == null || points == null || rotArr == null)
+        {
+            Debug.LogError("StagePrefab arrays are NULL");
+            return;
+        }
+
+        if (soArr.Length != points.Length || soArr.Length != rotArr.Length)
+        {
+            Debug.LogError($"Array length mismatch: SO={soArr.Length}, Pos={points.Length}, Rot={rotArr.Length}");
+            return;
+        }
+
+        if (StageManager.Instance.tetrisPool.GetPooled() as TeterisPrefab == null)
+        {
+            Debug.LogError("Pool 없음");
+        }
+
+
+        for (int i = 0; i < soArr.Length; i++)
+        {
+            if (soArr[i] == null || points[i] == null)
+            {
+                Debug.LogError($"Null element at index {i}");
+                continue;
+            }
+
+            var prefab = StageManager.Instance.tetrisPool.GetPooled() as TeterisPrefab;
+
+            if (prefab == null)
+            {
+                Debug.LogError("Pool returned null");
+                continue;
+            }
+
+            prefab.transform.position = points[i].localPosition;
+            prefab.Init(soArr[i], grid, false, rotArr[i]);
+
+            if (prefab.childrenPositions == null)
+            {
+                Debug.LogError($"childrenPositions NULL at index {i}");
+                continue;
+            }
+            List<Vector3> occupy = prefab.childrenPositions.ToList();
+            OnCheckCell?.Invoke(occupy, new List<Vector3>(), prefab);
+        }
     }
 
 

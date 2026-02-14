@@ -35,6 +35,7 @@ public class TeterisPrefab : PooledObject,
 
     private Vector3Int dragCellOffset;
     private bool hasDragOffset;
+    private bool canMove;
 
     // 터치 횟수 추적
     private int touchCount;
@@ -51,13 +52,14 @@ public class TeterisPrefab : PooledObject,
         mainCamera = Camera.main;
     }
 
-    public void Init(TeterisBlock tetrisSO, Grid _grid)
+    public void Init(TeterisBlock tetrisSO, Grid _grid, bool _canMove = true, int _rotIndex = 0)
     {
         if (mainCamera == null)
             mainCamera = Camera.main;
 
         blockSO = tetrisSO;
         grid = _grid;
+        canMove = _canMove;
 
         int childCount = transform.childCount;
         childrenPositions = new Vector3[childCount];
@@ -85,8 +87,8 @@ public class TeterisPrefab : PooledObject,
 
         EnsureChildColliderAndForwarder();
 
-        curRotIndex = 0;
-        prevRotIndex = 0;
+        curRotIndex = _rotIndex;
+        prevRotIndex = _rotIndex;
         ApplyRotation(curRotIndex);
 
         lastSnappedPosition = transform.position;
@@ -110,6 +112,9 @@ public class TeterisPrefab : PooledObject,
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (!canMove)
+            return;
+
         isPointerDown = true;
         isDragging = false;
         prevRotIndex = curRotIndex;
@@ -196,7 +201,8 @@ public class TeterisPrefab : PooledObject,
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (grid == null || mainCamera == null) return;
+        if (grid == null || mainCamera == null || !canMove) 
+            return;
 
         prevPos = gameObject.transform.position;
         isDragging = true;
@@ -215,7 +221,8 @@ public class TeterisPrefab : PooledObject,
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (grid == null || mainCamera == null) return;
+        if (grid == null || mainCamera == null || !canMove) 
+            return;
 
         Vector3 fingerWorld = mainCamera.ScreenToWorldPoint(eventData.position);
         fingerWorld.z = 0f;
@@ -235,6 +242,9 @@ public class TeterisPrefab : PooledObject,
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (!canMove)
+            return;
+
         isDragging = false;
         CancelTimer();
         isPointerDown = false;
@@ -244,7 +254,8 @@ public class TeterisPrefab : PooledObject,
 
     public void ForceSnapByScreenPos(Vector2 screenPos)
     {
-        if (grid == null || mainCamera == null) return;
+        if (grid == null || mainCamera == null || !canMove) 
+                return;
 
         Vector3 worldPos = mainCamera.ScreenToWorldPoint(screenPos);
         worldPos.z = 0f;
