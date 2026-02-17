@@ -32,6 +32,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a20da0cde0cf0cf43b499f72fc886db8
+    m_Address: 4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ddd0116da8464dc479dc07468de27205
     m_Address: TetrisSample
     m_ReadOnly: 0

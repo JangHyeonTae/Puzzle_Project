@@ -98,6 +98,9 @@ public class TeterisPrefab : PooledObject,
 
         touchCount = 0;
         hasDragOffset = false;
+
+        if (!_canMove)
+            ChangeVec();
     }
 
     private void OnDisable()
@@ -362,7 +365,7 @@ public class TeterisPrefab : PooledObject,
             }
         }
 
-        if (result != null && result.Count > 0 && isMoveConfirmed && !StageManager.Instance.isStageChange)
+        if (result != null && result.Count > 0 && isMoveConfirmed && !StageManager.Instance.isStageChange && canMove)
         {
             Vector3 worldPos = result[0];
             Vector2 screenPos = mainCamera.WorldToScreenPoint(worldPos);
@@ -427,11 +430,8 @@ public class TeterisPrefab : PooledObject,
 
         isOuting = true;
 
-        // Á¡À¯ ¹Ý³³
-        if (resultPos != null && resultPos.Length > 0)
-        {
-            DrawGrid.Instance.OnCheckCell?.Invoke(new List<Vector3>(), resultPos.ToList(), this);
-        }
+        if (DrawGrid.Instance.outList == null)
+            Debug.Log("OutList null");
 
         for (int i = 0; i < childrenPositions.Length; i++)
         {
@@ -440,6 +440,12 @@ public class TeterisPrefab : PooledObject,
                 DrawGrid.Instance.outList.Remove(childrenPositions[i]);
             }
         }
+        // Á¡À¯ ¹Ý³³
+        if (resultPos != null && resultPos.Length > 0)
+        {
+            DrawGrid.Instance.OnCheckCell?.Invoke(new List<Vector3>(), resultPos.ToList(), this);
+        }
+
 
         await PlayOutAnimation();
     }

@@ -175,8 +175,6 @@ public class DrawGrid : Singleton<DrawGrid>
                 Debug.LogError($"childrenPositions NULL at index {i}");
                 continue;
             }
-            List<Vector3> occupy = prefab.childrenPositions.ToList();
-            OnCheckCell?.Invoke(occupy, new List<Vector3>(), prefab);
         }
     }
 
@@ -272,7 +270,8 @@ public class DrawGrid : Singleton<DrawGrid>
 
     private void RebuildOutList()
     {
-        outList.Clear();
+        if(outList.Count > 0)
+            outList.Clear();    
 
         foreach (var pair in cellDic)
         {
@@ -329,9 +328,9 @@ public class DrawGrid : Singleton<DrawGrid>
     {
         cellList.Clear();
         cellExitList.Clear();
-        outList.Clear();
         cellDic.Clear();
-        cellLines.Clear();
+        cellLines.Clear(); 
+        outList.Clear();
 
         for (int i = transform.childCount - 1; i >= 0; i--)
             Destroy(transform.GetChild(i).gameObject);
