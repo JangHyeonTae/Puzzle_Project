@@ -1,7 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using UnityEngine;
 
@@ -16,7 +15,7 @@ public class DrawGrid : Singleton<DrawGrid>
     public float lineWidth = 0.05f;
     public StagePrefab stagePrefab;
 
-    public List<Vector3> cellList = new List<Vector3>();
+    public List<Vector3> cellList;
     public List<Vector3> cellExitList = new List<Vector3>();
     public List<Vector3> outList = new List<Vector3>();
 
@@ -48,6 +47,7 @@ public class DrawGrid : Singleton<DrawGrid>
         if (grid == null)
             grid = FindObjectOfType<Grid>();
 
+        InitStage();
         OnCheckCell += ChangeVector;
         OnCheck += CheckPos;
         OnCheckIsMine += CheckIsMine;
@@ -73,6 +73,7 @@ public class DrawGrid : Singleton<DrawGrid>
         drawCts?.Dispose();
         drawCts = new CancellationTokenSource();
 
+        ClearAll();
         var token = drawCts.Token;
 
         await UniTask.WaitUntil(() => StageManager.Instance != null);
@@ -120,6 +121,15 @@ public class DrawGrid : Singleton<DrawGrid>
         StageManager.Instance.isStageChange = false;
     }
 
+    private void InitStage()
+    {
+        cellList = new List<Vector3>();
+        cellExitList = new List<Vector3>();
+        outList = new List<Vector3>();
+
+        cellDic = new Dictionary<Vector3, TeterisPrefab>();
+        cellLines = new Dictionary<Vector3Int, List<LineRenderer>>();
+    }
 
     private void SpawnStageTetris()
     {
@@ -128,6 +138,7 @@ public class DrawGrid : Singleton<DrawGrid>
             Debug.LogError("stagePrefab is NULL");
             return;
         }
+
 
         var soArr = stagePrefab.TetrisSO;
         var points = stagePrefab.TetrisPrefabPos;
@@ -145,7 +156,7 @@ public class DrawGrid : Singleton<DrawGrid>
             return;
         }
 
-        if (StageManager.Instance.tetrisPool.GetPooled() as TeterisPrefab == null)
+        if (StageManager.Instance.tetrisPool == null)
         {
             Debug.LogError("Pool 없음");
         }
@@ -155,7 +166,7 @@ public class DrawGrid : Singleton<DrawGrid>
         {
             if (soArr[i] == null || points[i] == null)
             {
-                Debug.LogError($"Null element at index {i}");
+                Debug.LogError($"Null index {i}");
                 continue;
             }
 
@@ -270,8 +281,8 @@ public class DrawGrid : Singleton<DrawGrid>
 
     private void RebuildOutList()
     {
-        if(outList.Count > 0)
-            outList.Clear();    
+        if (outList.Count > 0)
+            outList.Clear();
 
         foreach (var pair in cellDic)
         {
@@ -320,7 +331,10 @@ public class DrawGrid : Singleton<DrawGrid>
         {
             StageManager.Instance.isStageChange = true;
             StageManager.Instance.ClearStage();
-            ClearAll();
+
+
+            for (int i = transform.childCount - 1; i >= 0; i--)
+                Destroy(transform.GetChild(i).gameObject);
         }
     }
 
@@ -329,10 +343,8 @@ public class DrawGrid : Singleton<DrawGrid>
         cellList.Clear();
         cellExitList.Clear();
         cellDic.Clear();
-        cellLines.Clear(); 
+        cellLines.Clear();
         outList.Clear();
 
-        for (int i = transform.childCount - 1; i >= 0; i--)
-            Destroy(transform.GetChild(i).gameObject);
     }
 }
