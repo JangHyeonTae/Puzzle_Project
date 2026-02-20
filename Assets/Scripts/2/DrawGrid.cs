@@ -16,13 +16,13 @@ public class DrawGrid : Singleton<DrawGrid>
     public StagePrefab stagePrefab;
 
     public List<Vector3> cellList;
-    public List<Vector3> cellExitList = new List<Vector3>();
-    public List<Vector3> outList = new List<Vector3>();
+    public List<Vector3> cellExitList;
+    public List<Vector3> outList;
 
     // 진실 데이터
-    public Dictionary<Vector3, TeterisPrefab> cellDic = new Dictionary<Vector3, TeterisPrefab>();
+    public Dictionary<Vector3, TeterisPrefab> cellDic;
 
-    private Dictionary<Vector3Int, List<LineRenderer>> cellLines = new Dictionary<Vector3Int, List<LineRenderer>>();
+    private Dictionary<Vector3Int, List<LineRenderer>> cellLines;
 
     public Func<List<Vector3>, List<Vector3>, TeterisPrefab, List<Vector3>> OnCheckCell;
     public Func<Vector3, bool> OnCheck;

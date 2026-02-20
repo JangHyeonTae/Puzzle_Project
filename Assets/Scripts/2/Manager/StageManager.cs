@@ -27,7 +27,7 @@ public class StageManager : Singleton<StageManager>
 
         stageCts = new CancellationTokenSource();
 
-        curStage = 1;
+        curStage = 4;
 
         if (stageClearAnim == null)
             stageClearAnim = GetComponentInChildren<StageClearAnim>(true);
