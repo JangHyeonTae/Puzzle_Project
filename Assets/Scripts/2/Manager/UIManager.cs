@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Tomino.Shared;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,6 +27,7 @@ public class UIManager : Singleton<UIManager>
 {
     private Canvas mainCanvas;
     private CanvasScaler canvasScaler;
+
     [field: SerializeField] public Vector2 setCanvasScale { get; private set; }
     private RectTransform rect;
 
@@ -34,10 +36,18 @@ public class UIManager : Singleton<UIManager>
 
     UIStack uiStack;
 
+    // SafeArea에 따른 카메라 Size조정
+
     protected void Awake()
     {
         base.Awake();
         CheckCanvas().Forget();
+
+    }
+
+    private void Update()
+    {
+        
     }
 
 
