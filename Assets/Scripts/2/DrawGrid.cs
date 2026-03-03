@@ -40,12 +40,15 @@ public class DrawGrid : Singleton<DrawGrid>
         }
     }
 
+    private Material _sharedLineMaterial;
     private CancellationTokenSource drawCts;
 
     void Start()
     {
         if (grid == null)
             grid = FindObjectOfType<Grid>();
+
+        _sharedLineMaterial = new Material(Shader.Find("Sprites/Default"));
 
         InitStage();
         OnCheckCell += ChangeVector;
@@ -191,7 +194,7 @@ public class DrawGrid : Singleton<DrawGrid>
 
 
 
-    void DrawCellSquare(Vector3Int cellPos)
+    private void DrawCellSquare(Vector3Int cellPos)
     {
         Vector3 size = grid.cellSize;
         Vector3 bl = grid.CellToWorld(cellPos);
@@ -215,8 +218,8 @@ public class DrawGrid : Singleton<DrawGrid>
         GameObject go = new GameObject("GridLine");
         go.transform.SetParent(transform);
 
-        LineRenderer lr = go.AddComponent<LineRenderer>();
-        lr.material = new Material(Shader.Find("Sprites/Default"));
+        LineRenderer lr = go.AddComponent<LineRenderer>(); 
+        lr.sharedMaterial = _sharedLineMaterial;
         lr.startWidth = lineWidth;
         lr.endWidth = lineWidth;
         lr.positionCount = 2;

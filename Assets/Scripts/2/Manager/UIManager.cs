@@ -1,10 +1,7 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
-using Tomino.Shared;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,8 +22,9 @@ public enum PopupAnimationType
 
 public class UIManager : Singleton<UIManager>
 {
+
     private Canvas mainCanvas;
-    private CanvasScaler canvasScaler;
+    private CameraFromCanvas cameraFromCanvas;
 
     [field: SerializeField] public Vector2 setCanvasScale { get; private set; }
     private RectTransform rect;
@@ -36,35 +34,28 @@ public class UIManager : Singleton<UIManager>
 
     UIStack uiStack;
 
-    // SafeArea에 따른 카메라 Size조정
 
     protected void Awake()
     {
         base.Awake();
+        cameraFromCanvas = GetComponent<CameraFromCanvas>();
         CheckCanvas().Forget();
-
     }
 
-    private void Update()
-    {
-        
-    }
 
 
     private async UniTaskVoid CheckCanvas()
     {
+
         if (uiStack == null)
             uiStack = new UIStack();
 
-        if (mainCanvas == null)
-        {
-            var obj = await DataManager.Instance.LoadData("MainCanvas");
-            if (obj != null)
-            {
-                mainCanvas = Instantiate(obj).GetComponent<Canvas>();
-                mainCanvas.transform.SetParent(transform);
-            }
-        }
+        if(cameraFromCanvas != null)
+            await cameraFromCanvas.InitCanvas();
+
+        mainCanvas = cameraFromCanvas.mainCanvas;
+        SetCanvasScale();
+
 
         if (popupPrefab != null)
         {
@@ -76,6 +67,15 @@ public class UIManager : Singleton<UIManager>
         {
             Debug.LogError("UIManager: popupPrefab이 Inspector에서 할당되지 않았습니다!");
         }
+    }
+
+    private void SetCanvasScale()
+    {
+        var scaler = mainCanvas.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080, 1920); // 기준 해상도
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0f;
     }
 
     private void SetPool(ObjectPool pool, PooledObject ui, string parentName, int size)
@@ -95,25 +95,21 @@ public class UIManager : Singleton<UIManager>
         uiStack.RemoveUI();
     }
 
-    #region PopUp Dotween
-    private void SetCanvasScale()
-    {
-        mainCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        canvasScaler.referenceResolution = setCanvasScale;
-    }
 
-    private void RectScale()
-    {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.localPosition = Vector3.zero;
-        rect.localScale = Vector3.one;
-        rect.localRotation = Quaternion.identity;
-    }
+
+    #region PopUp Dotween
+
+    //private void RectScale()
+    //{
+    //    rect.anchorMin = Vector2.zero;
+    //    rect.anchorMax = Vector2.one;
+    //    rect.offsetMin = Vector2.zero;
+    //    rect.offsetMax = Vector2.zero;
+    //    rect.pivot = new Vector2(0.5f, 0.5f);
+    //    rect.localPosition = Vector3.zero;
+    //    rect.localScale = Vector3.one;
+    //    rect.localRotation = Quaternion.identity;
+    //}
 
     public async UniTask ShowPopUp(
         string message,
