@@ -10,10 +10,16 @@ public class CameraFromCanvas : MonoBehaviour
     [SerializeField] private float minSize = 2f;          // 최소 줌
     [SerializeField] private float maxSize = 20f;         // 최대 줌
 
+    [Header("Debug / Editor Test")]
+    [SerializeField] private float doubleClickThreshold = 0.25f;
+    [SerializeField] private float doubleClickZoomMultiplier = 100f; // zoomSpeed * multiplier
+
     public Canvas mainCanvas { get; set; }
     private RectTransform canvasRect { get; set; }
     private Camera cam;
 
+    private float _lastClickTime = -999f;
+    
     public async UniTask InitCanvas()
     {
         cam = Camera.main;
@@ -31,7 +37,7 @@ public class CameraFromCanvas : MonoBehaviour
         if (mainCanvas != null)
             canvasRect = mainCanvas.GetComponent<RectTransform>();
 
-        SyncCameraToCanvas();
+        //SyncCameraToCanvas();
     }
 
     private void Update()
@@ -45,7 +51,10 @@ public class CameraFromCanvas : MonoBehaviour
         HandlePinchZoom();
 
         //scroll 동작안함
-        HandleMouseScroll();
+        //HandleMouseScroll();
+
+        // 테스트용: 더블클릭 시 줌
+        //HandleDoubleClickZoom();
     }
 
     // 1. 모바일 핀치 줌 처리
@@ -81,6 +90,20 @@ public class CameraFromCanvas : MonoBehaviour
             float zoomAmount = scroll * mouseScrollSpeed;
             Zoom(zoomAmount);
         }
+    }
+
+    // 3. 더블클릭 줌 처리 (테스트용)
+    private void HandleDoubleClickZoom()
+    {
+        if (!Input.GetMouseButtonDown(0)) return;
+
+        float now = Time.unscaledTime;
+        bool isDoubleClick = (now - _lastClickTime) <= doubleClickThreshold;
+        _lastClickTime = now;
+
+        if (!isDoubleClick) return;
+
+        Zoom(zoomSpeed * doubleClickZoomMultiplier);
     }
 
     // 실제 OrthographicSize 적용

@@ -17,8 +17,24 @@ public class MainCanvas : MonoBehaviour
     [SerializeField] private GameObject[] stars;
     [SerializeField] private Button nextStageButton;
 
+    //Stage可记 捞固瘤积己
+    StageImgUI stageImgPrefab;
+    public Transform stagePrefabParent;
+
     private CancellationTokenSource starCts;
     private bool isOpen;
+
+    private async void Start()
+    {
+        GameObject data = await DataManager.Instance.LoadData("StageImgPrefab");
+        stageImgPrefab = data.GetComponent<StageImgUI>();
+        for(int i =0; i < 4; i++)
+        {
+            var inst = Instantiate(stageImgPrefab, stagePrefabParent);
+            inst.Init(i);
+        }
+    }
+
     private void OnEnable()
     {
         optionButton.onClick.AddListener(() => ClickOption(optionPopUp));
@@ -29,12 +45,12 @@ public class MainCanvas : MonoBehaviour
 
         stageFinishPanel.SetActive(false);
 
-        StageManager.Instance.OnClearStage += FinishStage;
+        StageManager.Instance.OnFinishStage += FinishStage;
     }
 
     private void OnDisable()
     {
-        StageManager.Instance.OnClearStage -= FinishStage;
+        StageManager.Instance.OnFinishStage -= FinishStage;
         optionButton.onClick.RemoveAllListeners();
         tetrisPanelOnOff.onClick.RemoveAllListeners();
         nextStageButton.onClick.RemoveAllListeners();
@@ -115,7 +131,8 @@ public class MainCanvas : MonoBehaviour
     private void NextStage()
     {
         ResetUI(true);
-        StageManager.Instance.curStage++;
+        StageManager.Instance.CurStage++;
+        StageManager.Instance.MaxStage++;
         DrawGrid.Instance.DrawGridFromChildren().Forget();
     }
 

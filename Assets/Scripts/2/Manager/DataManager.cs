@@ -98,6 +98,27 @@ public class DataManager : Singleton<DataManager>
         return prefab;
     }
 
+    public async UniTask<Sprite> LoadSprite(string address)
+    {
+        AsyncOperationHandle<Sprite> handle = Addressables.LoadAssetAsync<Sprite>(address);
+        Sprite sprite = null;
+        try
+        {
+            sprite = await handle.Task;
+        }
+        catch (System.Exception e)
+        {
+            Addressables.Release(handle);
+            return null;
+        }
+        if (sprite == null)
+        {
+            Addressables.Release(handle);
+            return null;
+        }
+        return sprite;
+    }
+
     public void ReleaseData(GameObject prefab)
     {
         if (prefab != null)

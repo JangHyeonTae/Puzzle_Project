@@ -7,7 +7,13 @@ using UnityEngine;
 
 public class StageManager : Singleton<StageManager>
 {
-    public int curStage;
+    private int maxStage;
+    public int MaxStage { get { return maxStage; } set { value = maxStage; OnChangeMaxStage?.Invoke(maxStage); }  }
+    public Action<int> OnChangeMaxStage;
+
+    private int curStage;
+    public int CurStage { get { return curStage; } set { value = curStage; OnChangeStage?.Invoke(curStage); } } 
+
     public int moveCount;
     public int[] curStageMoveLevel;
     public bool isStageChange;
@@ -16,10 +22,15 @@ public class StageManager : Singleton<StageManager>
     public ObjectPool tetrisPool;
     public GameObject tetrisParent;
 
-    public event Action OnClearStage;
+    public event Action OnFinishStage;
+    public event Action OnExitGame;
+    public event Action OnEnterGame;
+
+    public Action<int> OnChangeStage;
 
     private StageClearAnim stageClearAnim;
     private CancellationTokenSource stageCts;
+
 
     protected void Awake()
     {
@@ -27,7 +38,7 @@ public class StageManager : Singleton<StageManager>
 
         stageCts = new CancellationTokenSource();
 
-        curStage = 4;
+        curStage = 1;
 
         if (stageClearAnim == null)
             stageClearAnim = GetComponentInChildren<StageClearAnim>(true);
@@ -89,8 +100,22 @@ public class StageManager : Singleton<StageManager>
             }
         }
 
-        OnClearStage?.Invoke();
+        ChangeStage();
     }
 
-    
+
+    public void EnterGame()
+    {
+        OnEnterGame?.Invoke();
+    }
+
+    public void SaveStage()
+    {
+        OnExitGame?.Invoke();
+    }
+
+    public void ChangeStage()
+    {
+        OnFinishStage?.Invoke();
+    }
 }

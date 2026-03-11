@@ -65,12 +65,11 @@ public class TeterisPrefab : PooledObject,
         childrenPositions = new Vector3[childCount];
         childrenPrevPositions = new Vector3[childCount];
         childrenReturnPositions = new Vector3[childCount];
-        prevPos = transform.position; // 현재 위치 저장
+        prevPos = transform.position;
         resultPos = new Vector3[childCount];
 
         for (int i = 0; i < childCount; i++)
         {
-            // (0,0,0) 버그 방지를 위해 초기값을 그리드 밖으로 설정
             resultPos[i] = new Vector3(-9999f, -9999f, -9999f);
 
             Vector3 childWorldPos = transform.GetChild(i).position;

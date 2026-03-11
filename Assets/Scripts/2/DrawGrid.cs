@@ -83,7 +83,7 @@ public class DrawGrid : Singleton<DrawGrid>
         await UniTask.WaitUntil(() => StageManager.Instance.tetrisPool != null);
 
         var inst = await DataManager.Instance
-            .LoadStagePrefab(StageManager.Instance.curStage)
+            .LoadStagePrefab(StageManager.Instance.CurStage)
             .AttachExternalCancellation(token);
 
         if (token.IsCancellationRequested)
