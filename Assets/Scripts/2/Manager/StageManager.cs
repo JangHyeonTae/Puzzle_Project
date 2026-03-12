@@ -7,12 +7,12 @@ using UnityEngine;
 
 public class StageManager : Singleton<StageManager>
 {
-    private int maxStage;
-    public int MaxStage { get { return maxStage; } set { value = maxStage; OnChangeMaxStage?.Invoke(maxStage); }  }
+    [SerializeField] private int maxStage;
+    public int MaxStage { get => maxStage;  set { maxStage = value; OnChangeMaxStage?.Invoke(maxStage); }  }
     public Action<int> OnChangeMaxStage;
 
     private int curStage;
-    public int CurStage { get { return curStage; } set { value = curStage; OnChangeStage?.Invoke(curStage); } } 
+    public int CurStage { get => curStage; set { curStage = value; OnChangeStage?.Invoke(curStage); } } 
 
     public int moveCount;
     public int[] curStageMoveLevel;
@@ -31,6 +31,7 @@ public class StageManager : Singleton<StageManager>
     private StageClearAnim stageClearAnim;
     private CancellationTokenSource stageCts;
 
+    public SaveData saveData;
 
     protected void Awake()
     {
@@ -38,7 +39,11 @@ public class StageManager : Singleton<StageManager>
 
         stageCts = new CancellationTokenSource();
 
-        curStage = 1;
+        JsonController.Load();
+
+        saveData = JsonController.Data;
+        maxStage = saveData.maxStage;
+        curStage = saveData.curStage;
 
         if (stageClearAnim == null)
             stageClearAnim = GetComponentInChildren<StageClearAnim>(true);
@@ -76,7 +81,12 @@ public class StageManager : Singleton<StageManager>
             InstTetrisPool();
         }
     }
-
+    public void Save()
+    {
+        saveData.maxStage = maxStage;
+        saveData.curStage = curStage;
+        JsonController.Save(saveData);
+    }
     private void InstTetrisPool()
     {
         tetrisParent = new GameObject($"TetrisParent");

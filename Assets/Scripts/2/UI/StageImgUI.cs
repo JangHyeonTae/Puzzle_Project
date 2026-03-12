@@ -1,7 +1,9 @@
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 using UnityEngine.UI;
 
 public class StageImgUI : MonoBehaviour
@@ -9,51 +11,59 @@ public class StageImgUI : MonoBehaviour
     private Button stageButton;
     [SerializeField] private int stageIndex;
 
-    private bool isOpen;
-    public bool IsOpen { get { return isOpen; } set { value = isOpen; OnOpen?.Invoke(isOpen); } }
+    public bool isOpen;
+    public bool IsOpen { get { return isOpen; } set { isOpen = value; OnOpen?.Invoke(isOpen); } }
     public Action<bool> OnOpen;
 
+    private void Awake()
+    {
+        stageButton = GetComponent<Button>();
+    }
 
     private void OnEnable()
     {
-        StageManager.Instance.OnChangeMaxStage += OpenIntImg;
-        OnOpen += OpenBoolImg;
+        StageManager.Instance.OnChangeMaxStage += OpenImg;
+        OnOpen += OpenImgActive;
         stageButton.onClick.AddListener(ChangeStage);
+
+        OpenImg(StageManager.Instance.MaxStage);
     }
 
     private void OnDisable()
     {
-        StageManager.Instance.OnChangeMaxStage -= OpenIntImg;
-        OnOpen -= OpenBoolImg;
+        StageManager.Instance.OnChangeMaxStage -= OpenImg;
+        OnOpen -= OpenImgActive;
         stageButton.onClick.RemoveAllListeners();
     }
 
     public void Init(int _stageIndex)
     {
-        if (StageManager.Instance.MaxStage <= stageIndex + 1)
-            stageIndex = _stageIndex;
+        IsOpen = false;
+        stageIndex = _stageIndex;
+
+        OpenImg(StageManager.Instance.MaxStage);
     }
 
-    public void OpenIntImg(int value)
+
+    private void OpenImg(int data)
     {
-        if (value >= stageIndex + 1)
-        {
-            isOpen = true;
-        }
+        IsOpen = data >= stageIndex ? true : false;
     }
 
-    private async void OpenBoolImg(bool value)
+    private async void OpenImgActive(bool value)
     {
-        int index = value ? 1 : 0;
         stageButton.interactable = value;
 
-        var sprite = await DataManager.Instance.LoadSprite($"StageImg{stageIndex + 1}");
-        if (sprite != null)
-            gameObject.GetComponent<Image>().sprite = sprite;
+        if (value)
+        {
+            var sprite = await DataManager.Instance.LoadSprite($"StageImg{stageIndex}");
+            if (sprite != null)
+                gameObject.GetComponent<Image>().sprite = sprite;
+        }
     }
 
     private void ChangeStage()
     {
-        StageManager.Instance.CurStage = stageIndex + 1;
+        StageManager.Instance.CurStage = stageIndex;
     }
 }

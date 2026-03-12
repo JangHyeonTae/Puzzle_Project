@@ -1,24 +1,27 @@
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Demo : MonoBehaviour
 {
-    int value = 0;
-    Canvas mainCanvas;
+    public Button btn;
     private void Start()
     {
-        value = -1;
-        mainCanvas = FindObjectOfType<UIManager>().GetComponentInChildren<Canvas>();
-    }
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            
-        }
+        btn.onClick.AddListener(Click);
     }
 
-    
+    private void Click()
+    {
+        StageManager.Instance.CurStage++;
+        StageManager.Instance.MaxStage++;
+
+        StageManager.Instance.Save();
+        
+    }
+
+
+
 }

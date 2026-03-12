@@ -28,7 +28,7 @@ public class MainCanvas : MonoBehaviour
     {
         GameObject data = await DataManager.Instance.LoadData("StageImgPrefab");
         stageImgPrefab = data.GetComponent<StageImgUI>();
-        for(int i =0; i < 4; i++)
+        for(int i =1; i < 5; i++)
         {
             var inst = Instantiate(stageImgPrefab, stagePrefabParent);
             inst.Init(i);

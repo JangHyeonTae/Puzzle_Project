@@ -1800,7 +1800,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4792728147307078794
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1813,8 +1813,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8824964921496656413}
   - {fileID: 2589228197297455319}
+  - {fileID: 8824964921496656413}
   m_Father: {fileID: 8925530084072499728}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1873,7 +1873,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   outButton: {fileID: 7393218702768179902}
-  setButton: {fileID: 0}
 --- !u!1 &6316621728660787073
 GameObject:
   m_ObjectHideFlags: 0
