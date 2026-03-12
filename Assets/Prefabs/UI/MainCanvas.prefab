@@ -1573,17 +1573,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9783f6ffdb308de4cbcdf93852f1ecbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  optionButton: {fileID: 796236798263390513}
-  optionPopUp: {fileID: 663357088756248499}
+  stageChooseBtn: {fileID: 796236798263390513}
   tetrisPanelOnOff: {fileID: 8494245728136946737}
   ChooseTetrisPanel: {fileID: 7924386241411481920}
-  stageFinishPanel: {fileID: 5309590885892762077}
-  stars:
-  - {fileID: 6917347478608651801}
-  - {fileID: 6316621728660787073}
-  - {fileID: 2303900358349038923}
-  nextStageButton: {fileID: 888007126425773216}
-  stagePrefabParent: {fileID: 2589228197297455319}
+  stageChoosePopUp: {fileID: 7046024627729604219}
+  stageFinishPopUp: {fileID: 3746278208709929636}
 --- !u!1 &5246126836856764655
 GameObject:
   m_ObjectHideFlags: 0
@@ -1597,7 +1591,7 @@ GameObject:
   - component: {fileID: 6834244331615423798}
   - component: {fileID: 796236798263390513}
   m_Layer: 5
-  m_Name: OptionButton
+  m_Name: StageChooseBtn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1716,6 +1710,7 @@ GameObject:
   - component: {fileID: 7161465928395141018}
   - component: {fileID: 3401758892498135370}
   - component: {fileID: 607693395396159876}
+  - component: {fileID: 3746278208709929636}
   m_Layer: 5
   m_Name: StageFinishPanel
   m_TagString: Untagged
@@ -1782,6 +1777,23 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3746278208709929636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5309590885892762077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15136608ada9f304ebee3b76a126ca59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nextStageButton: {fileID: 888007126425773216}
+  stars:
+  - {fileID: 6917347478608651801}
+  - {fileID: 6316621728660787073}
+  - {fileID: 2303900358349038923}
 --- !u!1 &5604439025062929152
 GameObject:
   m_ObjectHideFlags: 0
@@ -1793,9 +1805,9 @@ GameObject:
   - component: {fileID: 4792728147307078794}
   - component: {fileID: 2252201703075619599}
   - component: {fileID: 8143857738641691817}
-  - component: {fileID: 663357088756248499}
+  - component: {fileID: 7046024627729604219}
   m_Layer: 5
-  m_Name: StagePopUp
+  m_Name: StageChoosePopUp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1860,7 +1872,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &663357088756248499
+--- !u!114 &7046024627729604219
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1873,6 +1885,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   outButton: {fileID: 7393218702768179902}
+  stagePrefabParent: {fileID: 2589228197297455319}
 --- !u!1 &6316621728660787073
 GameObject:
   m_ObjectHideFlags: 0

@@ -10,9 +10,6 @@ public static class JsonController
 
     public static SaveData Data => _saveData ??= new SaveData();
 
-    /// <summary>
-    /// JSON 파일에 SaveData 저장. (인자를 넘기면 그 데이터를 저장하고 내부 데이터도 갱신)
-    /// </summary>
     public static void Save(SaveData data = null)
     {
         _saveData ??= new SaveData();
@@ -26,12 +23,8 @@ public static class JsonController
             data.maxStage = 1;
 
         _saveDataManager.Save(Data);
-        Debug.Log("Save");
     }
 
-    /// <summary>
-    /// JSON 파일에서 SaveData를 불러와 내부 데이터로 설정.
-    /// </summary>
     public static void Load()
     {
         _saveData ??= new SaveData();
@@ -44,6 +37,5 @@ public static class JsonController
         if(_saveData.curStage <= 0)
             _saveData.curStage = 1;
 
-        Debug.Log("Load");
     }
 }

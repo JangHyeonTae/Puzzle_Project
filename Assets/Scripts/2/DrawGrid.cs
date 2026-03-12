@@ -72,6 +72,8 @@ public class DrawGrid : Singleton<DrawGrid>
 
     public async UniTask DrawGridFromChildren()
     {
+        DeleteLine();
+
         drawCts?.Cancel();
         drawCts?.Dispose();
         drawCts = new CancellationTokenSource();
@@ -333,12 +335,26 @@ public class DrawGrid : Singleton<DrawGrid>
         if (value == 0 && outList.Count == 0)
         {
             StageManager.Instance.isStageChange = true;
-            StageManager.Instance.ClearStage();
+            StageManager.Instance.isFinishStage = true;
 
+            if(StageManager.Instance.MaxStage == StageManager.Instance.CurStage)
+                StageManager.Instance.MaxStage++;
 
-            for (int i = transform.childCount - 1; i >= 0; i--)
-                Destroy(transform.GetChild(i).gameObject);
+            StageManager.Instance.CurStage++;
+            //StageManager.Instance.Save();
+            UIManager.Instance.FinishStage();
+
+            DeleteLine();
         }
+    }
+
+    private void DeleteLine()
+    {
+        if (transform.childCount == 0)
+            return;
+
+        for (int i = transform.childCount - 1; i >= 0; i--)
+            Destroy(transform.GetChild(i).gameObject);
     }
 
     private void ClearAll()

@@ -22,39 +22,57 @@ public enum PopupAnimationType
 
 public class UIManager : Singleton<UIManager>
 {
-
-    private Canvas mainCanvas;
-    private CameraFromCanvas cameraFromCanvas;
-
+    public MainCanvas mainCanvas { get; set; }
     [field: SerializeField] public Vector2 setCanvasScale { get; private set; }
     private RectTransform rect;
 
     [SerializeField] private PooledObject popupPrefab; // ÆË¾÷ ÇÁ¸®ÆÕ
     private ObjectPool popupPool;
 
-    UIStack uiStack;
+    public UIStack uiStack;
 
 
     protected void Awake()
     {
         base.Awake();
-        cameraFromCanvas = GetComponent<CameraFromCanvas>();
-        CheckCanvas().Forget();
+        InitCanvas().Forget();
+
+    }
+
+    private void OnEnable()
+    {
+        
+    }
+
+    private void OnDisable()
+    {
+        
+    }
+
+    public async UniTask InitCanvas()
+    {
+        if (mainCanvas == null)
+        {
+            var obj = await DataManager.Instance.LoadData("MainCanvas");
+            if (obj != null)
+            {
+                mainCanvas = Instantiate(obj).GetComponent<MainCanvas>();
+                mainCanvas.transform.SetParent(transform);
+            }
+        }
+
+        CheckCanvas();
     }
 
 
-
-    private async UniTaskVoid CheckCanvas()
+    private void CheckCanvas()
     {
 
         if (uiStack == null)
             uiStack = new UIStack();
 
-        if(cameraFromCanvas != null)
-            await cameraFromCanvas.InitCanvas();
 
-        mainCanvas = cameraFromCanvas.mainCanvas;
-        SetCanvasScale();
+        //SetCanvasScale();
 
 
         if (popupPrefab != null)
@@ -94,7 +112,11 @@ public class UIManager : Singleton<UIManager>
     {
         uiStack.RemoveUI();
     }
-
+    
+    public void FinishStage()
+    {
+        mainCanvas.MainCanvasAddPopUp(PopUpType.StageFinish);
+    }
 
 
     #region PopUp Dotween

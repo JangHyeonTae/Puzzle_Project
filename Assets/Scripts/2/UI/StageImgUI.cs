@@ -38,8 +38,8 @@ public class StageImgUI : MonoBehaviour
 
     public void Init(int _stageIndex)
     {
-        IsOpen = false;
         stageIndex = _stageIndex;
+        IsOpen = false;
 
         OpenImg(StageManager.Instance.MaxStage);
     }
@@ -47,23 +47,28 @@ public class StageImgUI : MonoBehaviour
 
     private void OpenImg(int data)
     {
-        IsOpen = data >= stageIndex ? true : false;
+        IsOpen = data >= stageIndex;
     }
 
     private async void OpenImgActive(bool value)
     {
         stageButton.interactable = value;
 
-        if (value)
-        {
-            var sprite = await DataManager.Instance.LoadSprite($"StageImg{stageIndex}");
-            if (sprite != null)
-                gameObject.GetComponent<Image>().sprite = sprite;
-        }
+        if (!value)
+            return;
+
+        if (stageIndex <= 0) 
+            return;
+
+        var sprite = await DataManager.Instance.LoadSprite($"StageImg{stageIndex}");
+        if (sprite != null)
+            gameObject.GetComponent<Image>().sprite = sprite;
     }
 
     private void ChangeStage()
     {
+        StageManager.Instance.isFinishStage = false;
         StageManager.Instance.CurStage = stageIndex;
+        DrawGrid.Instance.DrawGridFromChildren().Forget();
     }
 }

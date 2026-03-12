@@ -1,18 +1,38 @@
 using Cysharp.Threading.Tasks;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
 public class StageManager : Singleton<StageManager>
 {
     [SerializeField] private int maxStage;
-    public int MaxStage { get => maxStage;  set { maxStage = value; OnChangeMaxStage?.Invoke(maxStage); }  }
+    public int MaxStage 
+    { 
+        get => maxStage;  
+        set 
+        {
+            if (maxStage > 5)
+                return;
+
+            maxStage = value; OnChangeMaxStage?.Invoke(maxStage); 
+        }  
+    }
     public Action<int> OnChangeMaxStage;
 
-    private int curStage;
-    public int CurStage { get => curStage; set { curStage = value; OnChangeStage?.Invoke(curStage); } } 
+    [SerializeField] private int curStage;
+    public int CurStage 
+    { 
+        get => curStage; 
+        set 
+        {
+            if (curStage > 5)
+                return;
+
+            curStage = value; 
+            OnChangeStage?.Invoke(curStage); 
+        } 
+    }
+    public Action<int> OnChangeStage;
 
     public int moveCount;
     public int[] curStageMoveLevel;
@@ -22,17 +42,12 @@ public class StageManager : Singleton<StageManager>
     public ObjectPool tetrisPool;
     public GameObject tetrisParent;
 
-    public event Action OnFinishStage;
-    public event Action OnExitGame;
-    public event Action OnEnterGame;
-
-    public Action<int> OnChangeStage;
-
     private StageClearAnim stageClearAnim;
     private CancellationTokenSource stageCts;
 
     public SaveData saveData;
 
+    public bool isFinishStage;
     protected void Awake()
     {
         base.Awake();
@@ -54,9 +69,11 @@ public class StageManager : Singleton<StageManager>
     private void Start()
     {
         InitStage().Forget();
+        OnChangeStage += ClearStage;
     }
     private void OnDestroy()
     {
+        OnChangeStage -= ClearStage;
         stageCts?.Cancel();
         stageCts?.Dispose();
     }
@@ -81,12 +98,14 @@ public class StageManager : Singleton<StageManager>
             InstTetrisPool();
         }
     }
+
     public void Save()
     {
         saveData.maxStage = maxStage;
         saveData.curStage = curStage;
         JsonController.Save(saveData);
     }
+
     private void InstTetrisPool()
     {
         tetrisParent = new GameObject($"TetrisParent");
@@ -94,10 +113,10 @@ public class StageManager : Singleton<StageManager>
         tetrisPool = new ObjectPool(tetrisPrefab, 100, tetrisParent.transform, false);
     }
 
-    public void ClearStage()
+    public void ClearStage(int value)
     {
-        //해당 부분에서 실행
-        stageClearAnim.PlayClearEffect().Forget();
+        if(isFinishStage)
+            stageClearAnim.PlayClearEffect().Forget();
 
         for (int i = 0; i < tetrisParent.transform.childCount; i++)
         {
@@ -110,22 +129,8 @@ public class StageManager : Singleton<StageManager>
             }
         }
 
-        ChangeStage();
+        isFinishStage = true;
     }
 
 
-    public void EnterGame()
-    {
-        OnEnterGame?.Invoke();
-    }
-
-    public void SaveStage()
-    {
-        OnExitGame?.Invoke();
-    }
-
-    public void ChangeStage()
-    {
-        OnFinishStage?.Invoke();
-    }
 }

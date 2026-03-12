@@ -15,11 +15,9 @@ public class Demo : MonoBehaviour
 
     private void Click()
     {
-        StageManager.Instance.CurStage++;
-        StageManager.Instance.MaxStage++;
+        Debug.Log($"UIManager.Instance.uiStack Count {UIManager.Instance.uiStack.popUpStack.Count}");
 
-        StageManager.Instance.Save();
-        
+
     }
 
 
